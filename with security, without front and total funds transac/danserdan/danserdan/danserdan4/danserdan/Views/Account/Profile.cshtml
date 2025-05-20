@@ -1,0 +1,676 @@
+@model danserdan.Models.ProfileViewModel
+@using danserdan.Services
+@using danserdan.Models
+@inject ApplicationDBContext _context
+@inject CurrencyService _currencyService
+
+<div class="container py-5">
+    <div class="row">
+        <!-- User Profile Card -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm border-0" style="background-color: #2a2d3a; border-radius: 12px; overflow: hidden;">
+                <div class="card-header" style="background: linear-gradient(90deg, rgba(124, 58, 237, 0.2), rgba(236, 72, 153, 0.2)); border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                    <h4 class="text-white mb-0 fw-bold">Profile</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="avatar-circle mx-auto mb-3" style="width: 100px; height: 100px; background: var(--gradient-primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-md);">
+                            <span class="text-white fw-bold" style="font-size: 2rem;">@Model.User.username.Substring(0, 1).ToUpper()</span>
+                        </div>
+                        <h5 class="text-white fw-bold mb-1">@Model.User.username</h5>
+                        <p class="text-muted small">Member since @Model.User.created_at.ToString("MMMM yyyy")</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label small text-muted">Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05);"><i class="bi bi-envelope"></i></span>
+                            <input type="email" class="form-control" style="background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); color: var(--text-primary);" value="@Model.User.email" readonly>
+                        </div>
+                    </div>
+                    
+                   
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="button" data-bs-toggle="modal" data-bs-target="#editProfileModal" class="btn text-center" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8)); border: none; color: white; border-radius: 10px; padding: 0.6rem 1.2rem; font-weight: 500; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3); transition: all 0.3s ease;">
+                            <i class="bi bi-person-badge me-2"></i>View Your Information
+                        </button>
+
+                        <a href="@Url.Action("AddFunds", "Payment")" class="btn text-center" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8)); border: none; color: white; border-radius: 10px; padding: 0.6rem 1.2rem; font-weight: 500; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3); transition: all 0.3s ease;">
+                            <i class="bi bi-wallet2 me-2"></i> Add Funds
+                        </a>
+
+                        <a href="@Url.Action("CashOut", "Payment")" class="btn text-center" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8)); border: none; color: white; border-radius: 10px; padding: 0.6rem 1.2rem; font-weight: 500; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3); transition: all 0.3s ease;">
+                            <i class="bi bi-cash-coin me-2"></i> Payout
+                        </a>
+
+                
+                       
+                       
+                    </div>
+
+                    
+                    @if (ViewBag.SuccessMessage != null)
+                    {
+                        <div class="alert alert-success mt-3">
+                            <i class="bi bi-check-circle me-2"></i> @ViewBag.SuccessMessage
+                        </div>
+                    }
+                    
+                    @if (ViewBag.ErrorMessage != null)
+                    {
+                        <div class="alert alert-danger mt-3">
+                            <i class="bi bi-exclamation-circle me-2"></i> @ViewBag.ErrorMessage
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <!-- Portfolio Section -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm border-0" style="background-color: #2a2d3a; border-radius: 12px; overflow: hidden;">
+                <div class="card-header bg-gradient d-flex justify-content-between align-items-center" style="background-color: #222531; border-bottom: none;">
+                    <h4 class="text-white mb-0 fw-bold">Purchased Stocks</h4>
+                    <button class="btn btn-sm btn-gradient" onclick="refreshPortfolio()" style="padding: 0.4rem 0.8rem;">
+                        <i class="bi bi-arrow-repeat me-1"></i> Refresh Prices
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0" style="background-color: #2a2d3a;">
+                            <thead>
+                                <tr>
+                                    <th>Stock</th>
+                                    <th>Shares</th>
+                                    <th>Avg. Price</th>
+                                    <th>Current Price</th>
+                                    <th>Total Value</th>
+                                    <th>Profit/Loss</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.StockHoldings.Any())
+                                {
+                                    @foreach (var holding in Model.StockHoldings)
+                                    {
+                                        var profitLossClass = holding.ProfitLoss >= 0 ? "text-success" : "text-danger";
+                                        var profitLossIcon = holding.ProfitLoss >= 0 ? "bi-graph-up-arrow" : "bi-graph-down-arrow";
+                                        var totalValue = holding.CurrentPrice * holding.Quantity;
+                                        
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="symbol me-2" style="width: 30px; height: 30px; background: var(--gradient-primary); border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                                                        <span class="text-white fw-bold">@holding.Symbol[0]</span>
+                                                    </div>
+                                                    <div>
+                                                        <span class="text-white">@holding.Symbol</span>
+                                                        <div class="text-muted small">@holding.CompanyName</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-white">@holding.Quantity</td>
+                                            @{
+                                                var holdingCurrency = _currencyService.GetUserPreferredCurrency();
+                                                var holdingCurrencySymbol = holdingCurrency == "PHP" ? "₱" : "$";
+                                                
+                                                var purchasePrice = holding.PurchasePrice;
+                                                var currentPrice = holding.CurrentPrice;
+                                                var totalValueAmount = totalValue;
+                                                var profitLossAmount = holding.ProfitLoss;
+                                                
+                                                if (holdingCurrency == "PHP")
+                                                {
+                                                    purchasePrice = decimal.Round(purchasePrice * 56.5m, 2);
+                                                    currentPrice = decimal.Round(currentPrice * 56.5m, 2);
+                                                    totalValueAmount = decimal.Round(totalValueAmount * 56.5m, 2);
+                                                    profitLossAmount = decimal.Round(profitLossAmount * 56.5m, 2);
+                                                }
+                                            }
+                                            <td class="text-white">
+                                                <span class="price" data-price-usd="@holding.PurchasePrice.ToString("F2")">@holdingCurrencySymbol@purchasePrice.ToString("F2")</span>
+                                            </td>
+                                            <td class="text-white" id="currentPrice_@holding.StockId">
+                                                <span class="price" data-price-usd="@holding.CurrentPrice.ToString("F2")">@holdingCurrencySymbol@currentPrice.ToString("F2")</span>
+                                            </td>
+                                            <td class="text-white" id="totalValue_@holding.StockId">
+                                                <span class="price" data-price-usd="@totalValue.ToString("F2")">@holdingCurrencySymbol@totalValueAmount.ToString("F2")</span>
+                                            </td>
+                                            <td class="@profitLossClass">
+                                                <i class="bi @profitLossIcon me-1"></i>
+                                                <span id="profitLoss_@holding.StockId" class="price" data-price-usd="@Math.Abs(holding.ProfitLoss).ToString("F2")">
+                                                    @(holding.ProfitLoss >= 0 ? "+" : "")@holdingCurrencySymbol@Math.Abs(profitLossAmount).ToString("F2") (@holding.ProfitLossPercentage)
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-danger" onclick="sellStock('@holding.Symbol', @holding.StockId, @holding.Quantity)">
+                                                    <i class="bi bi-cart-dash me-1"></i> Sell
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="bi bi-info-circle me-2"></i> You don't own any stocks yet. Visit the <a href="@Url.Action("Stocks", "Home")" class="text-primary">Stocks</a> page to start investing.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Trade History Section -->
+            <div class="col-lg-12">
+            <div class="card shadow-sm border-0" style="background-color: #2a2d3a; border-radius: 12px; overflow: hidden;">
+                <div class="card-header bg-gradient d-flex justify-content-between align-items-center" style="background-color: #222531; border-bottom: none;">
+                    <h4 class="text-white mb-0 fw-bold">Trade History</h4>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-dark dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            Filter
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-dark">
+                            <li><a class="dropdown-item" href="#">All Trades</a></li>
+                            <li><a class="dropdown-item" href="#">Buy Orders</a></li>
+                            <li><a class="dropdown-item" href="#">Sell Orders</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover mb-0" style="background-color: #2a2d3a;">
+                            <thead>
+                                <tr>
+                                    <th>Stock</th>
+                                    <th>Type</th>
+                                    <th>Date</th>
+                                    <th>Quantity</th>
+                                    <th>Price</th>
+                                    <th>Total Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Transactions.Any())
+                                {
+                                    @foreach (var transaction in Model.Transactions)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    @{
+                                                         // Get stock symbol from StockId
+                                                        var stock = await _context.Stocks.FindAsync(transaction.StockId);
+                                                        var symbol = stock?.symbol ?? "";
+                                                        
+                                                        // Check if this is a funds transaction (Add Funds or Payout)
+                                                        bool isFundsTransaction = string.IsNullOrEmpty(symbol);
+                                                        if (isFundsTransaction)
+                                                        {
+                                                            symbol = transaction.Price > 0 ? "ADD FUNDS" : "PAYOUT";
+                                                        }
+                                                        
+                                                        var firstLetter = symbol.Length > 0 ? symbol[0].ToString().ToUpper() : "";
+                                                        var bgColor = "#3b82f6"; // Default blue
+                                                        
+                                                        // Different colors based on transaction type
+                                                        if (transaction.Price < 0)
+                                                        {
+                                                            bgColor = "#ef4444"; // Red for sells
+                                                        }
+                                                        else if (transaction.Price > 0)
+                                                        {
+                                                            bgColor = "#10b981"; // Green for buys
+                                                        }
+                                                    }
+                                                    
+                                                    <div class="symbol me-2" style="width: 30px; height: 30px; background-color: @bgColor; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                                                        <span class="text-white fw-bold">@firstLetter</span>
+                                                    </div>
+                                                    <span class="text-white">@symbol</span>
+                                                </div>
+                                            </td>
+                                             <td>
+                                                 @if (isFundsTransaction && transaction.Price > 0)
+                                                 {
+                                                     <span class="badge" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8));">Add Funds</span>
+                                                 }
+                                                 else if (isFundsTransaction && transaction.Price < 0)
+                                                 {
+                                                     <span class="badge" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8));">Payout</span>
+                                                 }
+                                                 else if (transaction.Price > 0)
+                                                 {
+                                                     <span class="badge bg-success">Buy</span>
+                                                 }
+                                                 else if (transaction.Price < 0)
+                                                 {
+                                                     <span class="badge bg-danger">Sell</span>
+                                                 }
+                                                 else
+                                                 {
+                                                     <span class="badge bg-secondary">Unknown</span>
+                                                 }
+                                            </td>
+                                            <td>@transaction.TransactionTime.ToString("MMM dd, yyyy")</td>
+                                            <td>@transaction.quantity</td>
+                                            @{
+                                                var transactionCurrency = _currencyService.GetUserPreferredCurrency();
+                                                var transactionCurrencySymbol = transactionCurrency == "PHP" ? "₱" : "$";
+                                                
+                                                var price = Math.Abs(transaction.Price);
+                                                var totalAmount = Math.Abs(transaction.Price * transaction.quantity);
+                                                
+                                                if (transactionCurrency == "PHP")
+                                                {
+                                                    price = decimal.Round(price * 56.5m, 2);
+                                                    totalAmount = decimal.Round(totalAmount * 56.5m, 2);
+                                                }
+                                                
+                                                // For buy transactions, show amount in red (money spent)
+                                                // For sell transactions, compare sell price with average buy price to determine profit/loss
+                                                var cssClass = transaction.Price > 0 ? "text-danger" : "text-success";
+                                                
+                                                // If it's a sell transaction and we have the average purchase price, compare
+                                                if (transaction.Price < 0)
+                                                {
+                                                    // Try to find the stock holding to get average purchase price
+                                                    var holding = Model.StockHoldings.FirstOrDefault(h => h.StockId == transaction.StockId);
+                                                    
+                                                    // If we can't find the holding (might have sold all), use a default comparison
+                                                    // Assume profit if absolute value of sell price is greater than 100
+                                                    bool isProfitable = holding != null ? 
+                                                        Math.Abs(transaction.Price) > holding.PurchasePrice : 
+                                                        Math.Abs(transaction.Price) > 100;
+                                                        
+                                                    cssClass = isProfitable ? "text-success" : "text-danger";
+                                                }
+                                                
+                                                var prefix = transaction.Price > 0 ? "-" : "+";
+                                                
+                                                // Check if this is a PHP transaction
+                                                var phpNote = "";
+                                                if (transaction.TransactionType != null && transaction.TransactionType.Contains("PHP"))
+                                                {
+                                                    phpNote = " <small class=\"text-muted\">(PHP)</small>";
+                                                }
+                                            }
+                                            <td>
+                                                <span class="price" data-price-usd="@Math.Abs(transaction.Price).ToString("F2")">@transactionCurrencySymbol@price.ToString("F2")</span>
+                                                @Html.Raw(phpNote)
+                                            </td>
+                                            <td class="@cssClass">
+                                                <span class="price" data-price-usd="@totalAmount.ToString("F2")">@prefix@transactionCurrencySymbol@totalAmount.ToString("F2")</span>
+                                                @Html.Raw(phpNote)
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted py-4">
+                                            <i class="bi bi-info-circle me-2"></i> No transactions found. Start trading to see your history here.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-between align-items-center py-3" style="background: rgba(0, 0, 0, 0.2); border-top: 1px solid rgba(255, 255, 255, 0.05);">
+                    <span class="text-muted small">Showing @Model.Transactions.Count of @Model.TotalTrades trades</span>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            @if (Model.CurrentPage > 1)
+                            {
+                                <li class="page-item"><a class="page-link" href="@Url.Action("Profile", "Account", new { page = Model.CurrentPage - 1, pageSize = Model.PageSize })">Previous</a></li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+                            }
+                            
+                            @{
+                                // Calculate the range of page numbers to display (chunked pagination)
+                                int chunkSize = 3;
+                                int halfChunk = chunkSize / 2;
+                                int chunkStart = Math.Max(1, Model.CurrentPage - halfChunk);
+                                int chunkEnd = Math.Min(Model.TotalPages, chunkStart + chunkSize - 1);
+                                
+                                // Adjust the start if we're near the end to ensure we always show chunkSize pages if possible
+                                if (chunkEnd - chunkStart + 1 < chunkSize && chunkStart > 1)
+                                {
+                                    chunkStart = Math.Max(1, chunkEnd - chunkSize + 1);
+                                }
+                                
+                                // Show first page if not in the current chunk
+                                if (chunkStart > 1)
+                                {
+                                    <li class="page-item"><a class="page-link" href="@Url.Action("Profile", "Account", new { page = 1, pageSize = Model.PageSize })">1</a></li>
+                                    
+                                    // Show ellipsis if there's a gap
+                                    if (chunkStart > 2)
+                                    {
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    }
+                                }
+                                
+                                // Show the current chunk of pages
+                                for (int i = chunkStart; i <= chunkEnd; i++)
+                                {
+                                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")"><a class="page-link" href="@Url.Action("Profile", "Account", new { page = i, pageSize = Model.PageSize })">@i</a></li>
+                                }
+                                
+                                // Show last page if not in the current chunk
+                                if (chunkEnd < Model.TotalPages)
+                                {
+                                    // Show ellipsis if there's a gap
+                                    if (chunkEnd < Model.TotalPages - 1)
+                                    {
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    }
+                                    
+                                    <li class="page-item"><a class="page-link" href="@Url.Action("Profile", "Account", new { page = Model.TotalPages, pageSize = Model.PageSize })">@Model.TotalPages</a></li>
+                                }
+                            }
+                            
+                            @if (Model.CurrentPage < Model.TotalPages)
+                            {
+                                <li class="page-item"><a class="page-link" href="@Url.Action("Profile", "Account", new { page = Model.CurrentPage + 1, pageSize = Model.PageSize })">Next</a></li>
+                            }
+                            else
+                            {
+                                <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Information Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="userInfoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background: rgba(42, 45, 58, 0.95); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.5), rgba(236, 72, 153, 0.5)); border-bottom: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px 16px 0 0;">
+                <h5 class="modal-title text-white" id="userInfoModalLabel">Your Information</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- User Avatar -->
+                <div class="text-center mb-4">
+                    <div class="avatar-circle mx-auto mb-3" style="width: 100px; height: 100px; background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8)); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);">
+                        <span class="text-white fw-bold" style="font-size: 2.5rem;">@Model.User.username.Substring(0, 1).ToUpper()</span>
+                    </div>
+                </div>
+                                <!-- User Details -->
+                <div class="mb-3">
+                    <label class="form-label text-white-50">Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);"><i class="bi bi-person"></i></span>
+                        <input type="text" id="username" class="form-control" value="@Model.User.username" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white;">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-white-50">First Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);"><i class="bi bi-person-badge"></i></span>
+                        <input type="text" id="firstName" class="form-control" value="@Model.User.firstName" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white;">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-white-50">Last Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);"><i class="bi bi-person-badge"></i></span>
+                        <input type="text" id="lastName" class="form-control" value="@Model.User.lastName" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white;">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-white-50">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);"><i class="bi bi-envelope"></i></span>
+                        <input type="email" class="form-control" value="@Model.User.email" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white;" readonly>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-white-50">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);"><i class="bi bi-lock"></i></span>
+                        <input type="password" id="newPassword" class="form-control" placeholder="Enter new password" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white;">
+                    </div>
+                    <small class="text-white-50">Leave blank if you don't want to change your password</small>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-white-50">Confirm Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);"><i class="bi bi-lock"></i></span>
+                        <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm new password" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white;">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label text-white-50">Member Since</label>
+                    <div class="input-group">
+                        <span class="input-group-text" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);"><i class="bi bi-calendar-check"></i></span>
+                        <input type="text" class="form-control" value="@Model.User.created_at.ToString("MMMM dd, yyyy")" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white;" readonly>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 mt-4">
+                    <button type="button" id="saveProfile" class="btn" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8)); border: none; color: white; border-radius: 10px; padding: 0.6rem 1.2rem; font-weight: 500; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3); transition: all 0.3s ease;">
+                        <i class="bi bi-save me-2"></i> Save Changes
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="color: white; border-radius: 10px; padding: 0.6rem 1.2rem; font-weight: 500;">
+                        <i class="bi bi-x me-2"></i> Cancel
+                    </button>
+                </div>
+                
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const saveButton = document.getElementById('saveProfile');
+                        const usernameInput = document.getElementById('username');
+                        const firstNameInput = document.getElementById('firstName');
+                        const lastNameInput = document.getElementById('lastName');
+                        const newPasswordInput = document.getElementById('newPassword');
+                        const confirmPasswordInput = document.getElementById('confirmPassword');
+
+                        saveButton.addEventListener('click', async function() {
+                            const username = usernameInput.value.trim();
+                            const firstName = firstNameInput.value.trim();
+                            const lastName = lastNameInput.value.trim();
+                            const newPassword = newPasswordInput.value;
+                            const confirmPassword = confirmPasswordInput.value;
+
+                            // Basic validation
+                            if (!username || !firstName || !lastName) {
+                                alert('Please fill in all required fields');
+                                return;
+                            }
+
+                            if (newPassword && newPassword !== confirmPassword) {
+                                alert('Passwords do not match');
+                                return;
+                            }
+
+                            // Show loading state
+                            saveButton.disabled = true;
+                            saveButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving...';
+
+                            try {
+                                const formData = new FormData();
+                                formData.append('username', username);
+                                formData.append('firstName', firstName);
+                                formData.append('lastName', lastName);
+                                formData.append('newPassword', newPassword);
+                                formData.append('jsDetection', 'true');
+                                
+                                const response = await fetch('@Url.Action("UpdateProfile", "Account")', {
+                                    method: 'POST',
+                                    headers: {
+                                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                                    },
+                                    body: formData
+                                });
+
+                                const result = await response.json();
+
+                                if (result.success) {
+                                    alert('Profile updated successfully!');
+                                    location.reload();
+                                } else {
+                                    alert(result.message || 'Failed to update profile');
+                                }
+                            } catch (error) {
+                                console.error('Error:', error);
+                                alert('An error occurred while updating your profile');
+                            } finally {
+                                saveButton.disabled = false;
+                                saveButton.innerHTML = '<i class="bi bi-save me-2"></i> Save Changes';
+                            }
+                        });
+                    });
+                </script>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+
+    <script src="/js/trade.js?v=@DateTime.Now.Ticks"></script>
+    <script src="/js/portfolio.js?v=@DateTime.Now.Ticks"></script>
+    <script>
+                 
+      
+
+                                  document.addEventListener('DOMContentLoaded', function() {
+                // Using event delegation in case the form is dynamic
+                document.addEventListener('submit', function(e) {
+                    if (e.target && e.target.id === 'editProfileForm') {
+                        e.preventDefault();
+                        console.log('Submit intercepted by JS');
+
+                        const editProfileForm = e.target;
+                        // Show loading state
+                        const submitButton = editProfileForm.querySelector('button[type="submit"]');
+                        const originalButtonText = submitButton.innerHTML;
+                        submitButton.disabled = true;
+                        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Saving...';
+
+                        fetch(editProfileForm.action, {
+                            method: 'POST',
+                            body: new FormData(editProfileForm),
+                            headers: {
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value,
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            // Remove any existing alert messages first
+                            const existingAlerts = editProfileForm.querySelectorAll('.alert');
+                            existingAlerts.forEach(alert => alert.remove());
+
+                            if (data.success) {
+                                // Show success message
+                                const alertDiv = document.createElement('div');
+                                alertDiv.className = 'alert alert-success mt-3';
+                                alertDiv.innerHTML = `<i class="bi bi-check-circle me-2"></i> ${data.message}`;
+                                editProfileForm.prepend(alertDiv);
+
+                                // Update profile info on the page without refresh
+                                if (data.username) document.querySelector('h5.text-white.fw-bold.mb-1').textContent = data.username;
+
+                                // Close modal and refresh page after delay
+                                // Close modal immediately
+                                bootstrap.Modal.getInstance(document.getElementById('editProfileModal')).hide();
+                                
+                                // Show success message on the page
+                                const profileCard = document.querySelector('.card-body');
+                                if (profileCard) {
+                                    // Remove any existing alerts first
+                                    const existingAlerts = profileCard.querySelectorAll('.alert');
+                                    existingAlerts.forEach(alert => alert.remove());
+                                    
+                                    const successAlert = document.createElement('div');
+                                    successAlert.className = 'alert alert-success mt-3';
+                                    successAlert.innerHTML = `<i class="bi bi-check-circle me-2"></i> ${data.message}`;
+                                    profileCard.appendChild(successAlert);
+                                    
+                                    // Auto-remove the alert after 3 seconds
+                                    setTimeout(() => {
+                                        successAlert.remove();
+                                    }, 3000);
+                                }
+                                
+                                // Update profile info on the page without redirecting
+                                if (data.email) {
+                                    const emailElements = document.querySelectorAll('.user-email');
+                                    emailElements.forEach(el => el.textContent = data.email);
+                                }
+                            } else {
+                                // Show error message in the modal without redirecting
+                                const alertDiv = document.createElement('div');
+                                alertDiv.className = 'alert alert-danger mt-3';
+                                alertDiv.innerHTML = `<i class="bi bi-exclamation-circle me-2"></i> ${data.message}`;
+                                
+                                // Remove any existing alerts first
+                                const existingAlerts = editProfileForm.querySelectorAll('.alert');
+                                existingAlerts.forEach(alert => alert.remove());
+                                
+                                // Add the new alert at the top of the form
+                                editProfileForm.prepend(alertDiv);
+                                
+                                // Scroll to the top of the modal to show the error
+                                const modalBody = document.querySelector('.modal-body');
+                                if (modalBody) {
+                                    modalBody.scrollTop = 0;
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            
+                            // Remove any existing alerts first
+                            const existingAlerts = editProfileForm.querySelectorAll('.alert');
+                            existingAlerts.forEach(alert => alert.remove());
+                            
+                            // Create and show error message
+                            const alertDiv = document.createElement('div');
+                            alertDiv.className = 'alert alert-danger mt-3';
+                            alertDiv.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i> An error occurred. Please try again.';
+                            editProfileForm.prepend(alertDiv);
+                            
+                            // Scroll to the top of the modal to show the error
+                            const modalBody = document.querySelector('.modal-body');
+                            if (modalBody) {
+                                modalBody.scrollTop = 0;
+                            }
+                        })
+                        .finally(() => {
+                            submitButton.disabled = false;
+                            submitButton.innerHTML = originalButtonText;
+                        });
+                    }
+                });
+            });
+
+            
+
+        });
+
+    </script>
+}

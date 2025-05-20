@@ -1,0 +1,219 @@
+@{
+    ViewData["Title"] = "Add Funds";
+}
+
+@Html.AntiForgeryToken()
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0" style="background: rgba(42, 45, 58, 0.6); backdrop-filter: blur(15px); border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.5), rgba(236, 72, 153, 0.5)); border-bottom: none; padding: 1.5rem;">
+                    <h4 class="text-white mb-0 fw-bold">Add Funds to Your Account</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-4">
+                        <label for="amount" class="form-label text-white fw-medium mb-2">Amount to Add <span id="currencySymbolLabel">($)</span></label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white;"><i id="currencyIcon" class="bi bi-currency-dollar"></i></span>
+                            <input type="number" class="form-control" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white; font-size: 1.2rem;" id="amount" min="10" step="10" value="100">
+                        </div>
+                        <small class="text-white-50 mt-2 d-block">Minimum deposit: <span id="minDepositCurrency">$</span>10</small>
+                        <small class="text-white-50 mt-1 d-block" id="convertedAmountInfo" style="display: none;">Equivalent to <span id="convertedAmount"></span> in USD</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="text-white mb-3 fw-medium">Quick Amounts</h5>
+                        <div class="d-flex flex-wrap gap-3" id="quickAmountContainer">
+                            <button class="btn quick-amount" style="background: rgba(30, 30, 40, 0.6); color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0.6rem 1.2rem; transition: all 0.3s ease;" data-amount="50"><span class="currency-symbol">$</span>50</button>
+                            <button class="btn quick-amount" style="background: rgba(30, 30, 40, 0.6); color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0.6rem 1.2rem; transition: all 0.3s ease;" data-amount="100"><span class="currency-symbol">$</span>100</button>
+                            <button class="btn quick-amount" style="background: rgba(30, 30, 40, 0.6); color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0.6rem 1.2rem; transition: all 0.3s ease;" data-amount="250"><span class="currency-symbol">$</span>250</button>
+                            <button class="btn quick-amount" style="background: rgba(30, 30, 40, 0.6); color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0.6rem 1.2rem; transition: all 0.3s ease;" data-amount="500"><span class="currency-symbol">$</span>500</button>
+                            <button class="btn quick-amount" style="background: rgba(30, 30, 40, 0.6); color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0.6rem 1.2rem; transition: all 0.3s ease;" data-amount="1000"><span class="currency-symbol">$</span>1000</button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4" style="background: rgba(30, 30, 40, 0.6); border-radius: 12px; border-left: 4px solid rgba(124, 58, 237, 0.8); padding: 1.2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="bi bi-shield-lock-fill fs-3" style="color: rgba(124, 58, 237, 0.8);"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-white fw-medium">Secure Payments</h5>
+                                <p class="mb-0 text-white-50">Your payment information is securely processed by Stripe. We do not store your card details.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button id="checkout-button" class="btn btn-lg" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8)); border: none; color: white; border-radius: 12px; padding: 0.8rem; font-weight: 500; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3); transition: all 0.3s ease;">
+                            <i class="bi bi-credit-card me-2"></i> Proceed to Payment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Stripe
+            const stripe = Stripe('@ViewData["StripePublicKey"]');
+            const checkoutButton = document.getElementById('checkout-button');
+            
+            // Currency conversion constants
+            const USD_TO_PHP_RATE = 56.5;
+            let currentCurrency = localStorage.getItem('preferredCurrency') || 'USD';
+            
+            // Initialize currency display
+            updateCurrencyDisplay();
+            
+            // Listen for currency changes from the layout
+            document.addEventListener('currencyChanged', function(event) {
+                currentCurrency = event.detail.currency;
+                updateCurrencyDisplay();
+                updateAmountDisplay();
+            });
+            
+            // Function to update currency display elements
+            function updateCurrencyDisplay() {
+                const currencySymbol = currentCurrency === 'USD' ? '$' : '₱';
+                const currencyIcon = currentCurrency === 'USD' ? 'bi-currency-dollar' : 'bi-currency-exchange';
+                
+                // Update currency symbol in the label
+                document.getElementById('currencySymbolLabel').textContent = `(${currencySymbol})`;
+                
+                // Update currency icon
+                const iconElement = document.getElementById('currencyIcon');
+                iconElement.className = `bi ${currencyIcon}`;
+                
+                // Update minimum deposit currency
+                document.getElementById('minDepositCurrency').textContent = currencySymbol;
+                
+                // Update quick amount buttons
+                const currencySymbols = document.querySelectorAll('.currency-symbol');
+                currencySymbols.forEach(span => {
+                    span.textContent = currencySymbol;
+                });
+                
+                // Show/hide converted amount info
+                const convertedAmountInfo = document.getElementById('convertedAmountInfo');
+                if (currentCurrency === 'PHP') {
+                    convertedAmountInfo.style.display = 'block';
+                } else {
+                    convertedAmountInfo.style.display = 'none';
+                }
+            }
+            
+            // Function to update amount display based on currency
+            function updateAmountDisplay() {
+                const amountInput = document.getElementById('amount');
+                const amount = parseFloat(amountInput.value);
+                
+                if (!isNaN(amount)) {
+                    // Update converted amount info if in PHP
+                    if (currentCurrency === 'PHP') {
+                        const usdAmount = (amount / USD_TO_PHP_RATE).toFixed(2);
+                        document.getElementById('convertedAmount').textContent = `$${usdAmount}`;
+                    }
+                }
+            }
+            
+            // Handle quick amount buttons
+            const quickAmountButtons = document.querySelectorAll('.quick-amount');
+            quickAmountButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const amount = this.getAttribute('data-amount');
+                    document.getElementById('amount').value = amount;
+                    updateAmountDisplay();
+                    
+                    // Update active state
+                    quickAmountButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Listen for amount changes
+            document.getElementById('amount').addEventListener('input', updateAmountDisplay);
+            
+            // Handle checkout button click
+            checkoutButton.addEventListener('click', function() {
+                const amount = parseFloat(document.getElementById('amount').value);
+                
+                if (isNaN(amount) || amount < 10) {
+                    alert(`Please enter a valid amount (minimum ${currentCurrency === 'USD' ? '$' : '₱'}10)`);
+                    return;
+                }
+                
+                // Disable button and show loading state
+                checkoutButton.disabled = true;
+                checkoutButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Processing...';
+                
+                // We'll send the amount in the current currency
+                // The server will handle the conversion to USD if needed
+                let displayAmount = amount;
+                
+                // Create checkout session
+                fetch('/Payment/CreateCheckoutSession', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        amount: displayAmount,
+                        currency: currentCurrency 
+                    })
+                })
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok: ' + response.statusText);
+                    }
+                    return response.json();
+                })
+                .then(function(response) {
+                    if (!response.success) {
+                        throw new Error('Invalid response from server');
+                    }
+                    
+                    if (response.directSuccess) {
+                        // Payment was processed directly
+                        console.log('Payment processed successfully:', response.message);
+                        
+                        // Show success message
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-success mt-3';
+                        alertDiv.innerHTML = `<i class="bi bi-check-circle me-2"></i> ${response.message}`;
+                        document.querySelector('.card-body').prepend(alertDiv);
+                        
+                        // Redirect after a short delay
+                        setTimeout(function() {
+                            window.location.href = response.redirectUrl;
+                        }, 1500);
+                    } else if (response.sessionId) {
+                        // Use Stripe checkout
+                        console.log('Redirecting to Stripe checkout with session ID:', response.sessionId);
+                        stripe.redirectToCheckout({ sessionId: response.sessionId })
+                            .then(function(result) {
+                                if (result.error) {
+                                    alert(result.error.message);
+                                }
+                            });
+                    } else {
+                        throw new Error('Invalid payment response');
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                })
+                .finally(function() {
+                    // Re-enable button
+                    checkoutButton.disabled = false;
+                    checkoutButton.innerHTML = '<i class="bi bi-credit-card me-2"></i> Proceed to Payment';
+                });
+            });
+        });
+    </script>
+}

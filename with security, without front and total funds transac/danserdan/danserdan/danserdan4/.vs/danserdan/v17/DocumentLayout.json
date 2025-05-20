@@ -1,0 +1,178 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|c:\\users\\asus\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\views\\home\\stocks.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|solutionrelative:danserdan\\views\\home\\stocks.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|c:\\users\\asus\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|solutionrelative:danserdan\\controllers\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|c:\\users\\asus\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|solutionrelative:danserdan\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|c:\\users\\asus\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\views\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|solutionrelative:danserdan\\views\\account\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|c:\\users\\asus\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\models\\profileviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|solutionrelative:danserdan\\models\\profileviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|c:\\users\\asus\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|solutionrelative:danserdan\\views\\shared\\_layout.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|c:\\users\\asus\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|solutionrelative:danserdan\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|c:\\users\\asus\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\views\\account\\profile.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|solutionrelative:danserdan\\views\\account\\profile.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|c:\\users\\asus\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\controllers\\stockcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{52532BF2-3184-4C66-A100-115F9982728C}|danserdan\\danserdan.csproj|solutionrelative:danserdan\\controllers\\stockcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 6,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{b1e99781-ab81-11d0-b683-00aa00a3ee26}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "Profile.cshtml",
+              "DocumentMoniker": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Views\\Account\\Profile.cshtml",
+              "RelativeDocumentMoniker": "danserdan\\Views\\Account\\Profile.cshtml",
+              "ToolTip": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Views\\Account\\Profile.cshtml",
+              "RelativeToolTip": "danserdan\\Views\\Account\\Profile.cshtml",
+              "ViewState": "AgIAAJ4BAAAAAAAAAIAwwLsBAABfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-05-15T10:33:02.471Z",
+              "IsPinned": true
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "_Layout.cshtml",
+              "DocumentMoniker": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Views\\Shared\\_Layout.cshtml",
+              "RelativeDocumentMoniker": "danserdan\\Views\\Shared\\_Layout.cshtml",
+              "ToolTip": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Views\\Shared\\_Layout.cshtml",
+              "RelativeToolTip": "danserdan\\Views\\Shared\\_Layout.cshtml",
+              "ViewState": "AgIAAIcBAAAAAAAAAADwv9QBAAA2AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-05-15T11:31:44.991Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ProfileViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Models\\ProfileViewModel.cs",
+              "RelativeDocumentMoniker": "danserdan\\Models\\ProfileViewModel.cs",
+              "ToolTip": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Models\\ProfileViewModel.cs",
+              "RelativeToolTip": "danserdan\\Models\\ProfileViewModel.cs",
+              "ViewState": "AgIAAAUAAAAAAAAAAAAxwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-15T10:30:35.721Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Stocks.cshtml",
+              "DocumentMoniker": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Views\\Home\\Stocks.cshtml",
+              "RelativeDocumentMoniker": "danserdan\\Views\\Home\\Stocks.cshtml",
+              "ToolTip": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Views\\Home\\Stocks.cshtml",
+              "RelativeToolTip": "danserdan\\Views\\Home\\Stocks.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-05-15T10:25:12.001Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "StockController.cs",
+              "DocumentMoniker": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Controllers\\StockController.cs",
+              "RelativeDocumentMoniker": "danserdan\\Controllers\\StockController.cs",
+              "ToolTip": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Controllers\\StockController.cs",
+              "RelativeToolTip": "danserdan\\Controllers\\StockController.cs",
+              "ViewState": "AgIAAOMAAAAAAAAAAAAwwPkAAAAvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-23T18:03:57.083Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Views\\Account\\Login.cshtml",
+              "RelativeDocumentMoniker": "danserdan\\Views\\Account\\Login.cshtml",
+              "ToolTip": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Views\\Account\\Login.cshtml",
+              "RelativeToolTip": "danserdan\\Views\\Account\\Login.cshtml",
+              "ViewState": "AgIAABIAAAAAAAAAAAAAABQAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-04-19T11:16:54.72Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\appsettings.json",
+              "RelativeDocumentMoniker": "danserdan\\appsettings.json",
+              "ToolTip": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\appsettings.json",
+              "RelativeToolTip": "danserdan\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-04-23T02:07:39.652Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Program.cs",
+              "RelativeDocumentMoniker": "danserdan\\Program.cs",
+              "ToolTip": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Program.cs",
+              "RelativeToolTip": "danserdan\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-23T02:07:12.512Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AccountController.cs",
+              "DocumentMoniker": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Controllers\\AccountController.cs",
+              "RelativeDocumentMoniker": "danserdan\\Controllers\\AccountController.cs",
+              "ToolTip": "C:\\Users\\ASUS\\source\\repos\\tradess\\with security, without front and total funds transac\\danserdan\\danserdan\\danserdan4\\danserdan\\Controllers\\AccountController.cs",
+              "RelativeToolTip": "danserdan\\Controllers\\AccountController.cs",
+              "ViewState": "AgIAABEBAAAAAAAAAAAUwNsAAABfAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-23T02:44:23.286Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

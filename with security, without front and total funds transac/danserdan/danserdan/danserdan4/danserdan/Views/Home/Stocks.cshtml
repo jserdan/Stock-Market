@@ -1,0 +1,4067 @@
+@model danserdan.Models.PaginatedList<danserdan.Models.StockViewModel>
+@{
+    ViewData["Title"] = "Stocks";
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/stocks.js?v=@DateTime.Now.Ticks"></script>
+    <script src="/js/trade.js?v=@DateTime.Now.Ticks"></script>
+    <!-- Added version parameter to prevent caching -->    
+    <script >
+        document.addEventListener('DOMContentLoaded', function () {
+            // Store chart instances and stock data
+            const chartInstances = {};
+            const stockData = {};
+            const previousPrices = {};
+            let currentOpenModal = null;
+            
+            // Initialize stock data from model
+            @for (int i = 0; i < Model.Count; i++) {
+                var stock = Model[i];
+                <text>
+                stockData["@stock.Symbol"] = {
+                    price: "@stock.Price",
+                    change: "@stock.Change",
+                    changeClass: "@stock.ChangeClass",
+                    hour1: "@stock.Hour1",
+                    hour24: "@stock.Hour24",
+                    days7: "@stock.Days7",
+                    hour1Class: "@stock.Hour1Class",
+                    hour24Class: "@stock.Hour24Class",
+                    days7Class: "@stock.Days7Class",
+                    chartData: @Html.Raw(Json.Serialize(stock.ChartData))
+                };
+                previousPrices["@stock.Symbol"] = parseFloat("@stock.Price".replace('$', '').replace(',', ''));
+                </text>
+            }
+            
+            // Set up modal event listeners
+            @for (int i = 0; i < Model.Count; i++) {
+                var modalId = $"chartModal{i+1}";
+                var chartId = $"chart{i+1}";
+                var symbol = Model[i].Symbol;
+                <text>
+                // Set up modal event listeners for @symbol
+                document.getElementById('@modalId').addEventListener('shown.bs.modal', function() {
+                    currentOpenModal = '@symbol';
+                    // Create or update chart when modal is shown
+                    if (!chartInstances['@chartId']) {
+                        chartInstances['@chartId'] = createChart('@chartId', stockData['@symbol'].chartData);
+                    } else {
+                        updateChart(chartInstances['@chartId'], stockData['@symbol'].chartData);
+                    }
+                });
+                
+                document.getElementById('@modalId').addEventListener('hidden.bs.modal', function() {
+                    currentOpenModal = null;
+                });
+                </text>
+            }
+            
+            // Function to create a new chart
+            function createChart(canvasId, chartData) {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                
+                // Generate time labels for real-time updates
+                const now = new Date();
+                const labels = [];
+                for (let i = 6; i >= 0; i--) {
+                    const time = new Date(now);
+                    time.setSeconds(now.getSeconds() - i);
+                    labels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+                }
+                
+                // Process datasets
+                const datasets = chartData.map(dataset => ({
+                    label: dataset.label,
+                    data: dataset.data,
+                    borderColor: dataset.borderColor,
+                    borderWidth: dataset.borderWidth,
+                    tension: dataset.tension,
+                    fill: dataset.fill,
+                    pointRadius: 0 // Hide all points by default
+                }));
+                
+                // Calculate min and max for Y axis
+                let allValues = [];
+                datasets.forEach(ds => {
+                    ds.data.forEach(val => {
+                        if (val !== null) allValues.push(val);
+                    });
+                });
+                
+                const min = Math.floor(Math.min(...allValues) * 0.95);
+                const max = Math.ceil(Math.max(...allValues) * 1.05);
+                
+                // Create chart
+                return new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            duration: 0 // Disable animations for better performance
+                        },
+                        scales: {
+                            y: {
+                                min: min,
+                                max: max,
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: '#94a3b8'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.1)'
+                                },
+                                ticks: {
+                                    color: '#94a3b8'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: '#1a1a24',
+                                titleColor: '#fff',
+                                bodyColor: '#94a3b8',
+                                borderColor: '#2a2d3a',
+                                borderWidth: 1
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Function to update existing chart
+            function updateChart(chart, chartData) {
+                // Generate new time labels
+                const now = new Date();
+                const newLabels = [];
+                for (let i = 6; i >= 0; i--) {
+                    const time = new Date(now);
+                    time.setSeconds(now.getSeconds() - i);
+                    newLabels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+                }
+                
+                // Update datasets
+                const datasets = chartData.map(dataset => ({
+                    label: dataset.label,
+                    data: dataset.data,
+                    borderColor: dataset.borderColor,
+                    borderWidth: dataset.borderWidth,
+                    tension: dataset.tension,
+                    fill: dataset.fill,
+                    pointRadius: 0
+                }));
+                
+                // Calculate min and max for Y axis
+                let allValues = [];
+                datasets.forEach(ds => {
+                    ds.data.forEach(val => {
+                        if (val !== null) allValues.push(val);
+                    });
+                });
+                
+                const min = Math.floor(Math.min(...allValues) * 0.95);
+                const max = Math.ceil(Math.max(...allValues) * 1.05);
+                
+                // Update chart
+                chart.data.labels = newLabels;
+                chart.data.datasets = datasets;
+                chart.options.scales.y.min = min;
+                chart.options.scales.y.max = max;
+                chart.update('none'); // Update without animation for better performance
+            }
+            
+            // Function to update stock UI with pulse effect
+            function updateStockUI(symbol, data) {
+                // Find the stock item elements
+                const priceElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-price`);
+                const changeElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-change`);
+                const hour1Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-1`);
+                const hour24Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-24`);
+                const days7Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .days-7`);
+                
+                // Find the index of this symbol in the stockData object
+                const symbolIndex = Object.keys(stockData).indexOf(symbol) + 1;
+                
+                // Modal elements with specific IDs
+                const modalPriceElement = document.getElementById(`modalPrice${symbolIndex}`);
+                const modalChangeElement = document.getElementById(`modalChange${symbolIndex}`);
+                
+                // Parse current price
+                const currentPrice = parseFloat(data.price.replace('$', '').replace(',', ''));
+                const prevPrice = previousPrices[symbol] || currentPrice;
+                
+                // Determine if price went up or down
+                const priceDirection = currentPrice > prevPrice ? 'up' : 
+                                      currentPrice < prevPrice ? 'down' : 'same';
+                
+                // Update previous price for next comparison
+                previousPrices[symbol] = currentPrice;
+                
+                // Update price with pulse effect
+                if (priceElement) {
+                    priceElement.textContent = data.price;
+                    priceElement.classList.remove('pulse-green', 'pulse-red');
+                    if (priceDirection === 'up') {
+                        priceElement.classList.add('pulse-green');
+                    } else if (priceDirection === 'down') {
+                        priceElement.classList.add('pulse-red');
+                    }
+                }
+                
+                // Update change
+                if (changeElement) {
+                    changeElement.textContent = data.change;
+                    changeElement.className = `stock-change ${data.changeClass} ms-2`;
+                }
+                
+                // Update time period indicators
+                if (hour1Element) {
+                    hour1Element.textContent = data.hour1;
+                    hour1Element.className = `hour-1 ${data.hour1Class}`;
+                }
+                
+                if (hour24Element) {
+                    hour24Element.textContent = data.hour24;
+                    hour24Element.className = `hour-24 ${data.hour24Class}`;
+                }
+                
+                if (days7Element) {
+                    days7Element.textContent = data.days7;
+                    days7Element.className = `days-7 ${data.days7Class}`;
+                }
+                
+                // Update modal elements if modal is open
+                if (modalPriceElement) {
+                    modalPriceElement.textContent = data.price;
+                    modalPriceElement.classList.remove('pulse-green', 'pulse-red');
+                    if (priceDirection === 'up') {
+                        modalPriceElement.classList.add('pulse-green');
+                    } else if (priceDirection === 'down') {
+                        modalPriceElement.classList.add('pulse-red');
+                    }
+                }
+                
+                if (modalChangeElement) {
+                    modalChangeElement.textContent = data.change;
+                    modalChangeElement.className = `modal-change ${data.changeClass}`;
+                }
+            }
+            
+            // Function to fetch real-time stock updates
+            function fetchStockUpdates() {
+                fetch('/Home/GetStockUpdates')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.stocks) {
+                            data.stocks.forEach(stock => {
+                                if (stockData[stock.symbol]) {
+                                    // Update stored data
+                                    stockData[stock.symbol] = {
+                                        price: stock.price,
+                                        change: stock.change,
+                                        changeClass: stock.changeClass,
+                                        hour1: stock.hour1,
+                                        hour24: stock.hour24,
+                                        days7: stock.days7,
+                                        hour1Class: stock.hour1Class,
+                                        hour24Class: stock.hour24Class,
+                                        days7Class: stock.days7Class,
+                                        chartData: stock.chartData
+                                    };
+                                    
+                                    // Update UI
+                                    updateStockUI(stock.symbol, stockData[stock.symbol]);
+                                    
+                                    // Update chart if this stock's modal is open
+                                    if (currentOpenModal === stock.symbol) {
+                                        const chartId = `chart${Object.keys(stockData).indexOf(stock.symbol) + 1}`;
+                                        if (chartInstances[chartId]) {
+                                            updateChart(chartInstances[chartId], stock.chartData);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching stock updates:', error);
+                        // Generate mock data updates if API fails
+                        generateMockUpdates();
+                    })
+                    .finally(() => {
+                        // Schedule next update (every second)
+                        setTimeout(fetchStockUpdates, 3000);
+                    });
+            }
+            
+            // Function to generate mock updates if API fails
+            function generateMockUpdates() {
+                Object.keys(stockData).forEach(symbol => {
+                    // Generate random price change (-1% to +1%)
+                    const currentPrice = parseFloat(stockData[symbol].price.replace('$', '').replace(',', ''));
+                    const variation = (Math.random() * 0.02) - 0.01;
+                    const newPrice = currentPrice * (1 + variation);
+                    const formattedPrice = `$${newPrice.toFixed(2)}`;
+                    
+                    // Generate change percentage
+                    const changeValue = variation >= 0 ? `+${(variation * 100).toFixed(2)}%` : `${(variation * 100).toFixed(2)}%`;
+                    const changeClass = variation >= 0 ? 'text-success' : 'text-danger';
+                    
+                    // Generate mock chart data
+                    const mockChartData = stockData[symbol].chartData.map(dataset => {
+                        // Shift data points left and add new point
+                        const newData = [...dataset.data.slice(1), newPrice];
+                        return {
+                            ...dataset,
+                            data: newData,
+                            borderColor: variation >= 0 ? '#4ade80' : '#ef4444'
+                        };
+                    });
+                    
+                    // Update stored data with mock data
+                    stockData[symbol] = {
+                        ...stockData[symbol],
+                        price: formattedPrice,
+                        change: changeValue,
+                        changeClass: changeClass,
+                        chartData: mockChartData
+                    };
+                    
+                    // Update UI
+                    updateStockUI(symbol, stockData[symbol]);
+                    
+                    // Update chart if this stock's modal is open
+                    if (currentOpenModal === symbol) {
+                        const chartId = `chart${Object.keys(stockData).indexOf(symbol) + 1}`;
+                        if (chartInstances[chartId]) {
+                            updateChart(chartInstances[chartId], mockChartData);
+                        }
+                    }
+                });
+            }
+            
+            // Start fetching updates immediately
+            fetchStockUpdates();
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching stock data:', error);
+                            // If fetch fails, still render chart with existing data
+                            if (!chartInstances[chartId]) {
+                                chartInstances[chartId] = renderChart(chartId, stockData[symbol].chartData);
+                            }
+                        });
+                }
+                </text>
+            }
+
+            // Function to render chart with real-time data
+            function renderChart(canvasId, chartData) {
+                const ctx = document.getElementById(canvasId).getContext('2d');
+                
+                // Generate time labels for real-time updates (last 7 seconds)
+                const now = new Date();
+                const labels = [];
+                for (let i = 6; i >= 0; i--) {
+                    const time = new Date(now);
+                    time.setSeconds(now.getSeconds() - i);
+                    labels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+                }
+                
+                // Process datasets from the model
+                const datasets = chartData.map(dataset => {
+                    return {
+                        label: dataset.label,
+                        data: dataset.data,
+                        borderColor: dataset.borderColor,
+                        borderWidth: dataset.borderWidth,
+                        pointRadius: (ctx, options) => {
+                            const index = options.dataIndex;
+                            const dataArray = dataset.data;
+                            // Find the first and last non-null values in this dataset
+                            const firstIndex = dataArray.findIndex(val => val !== null);
+                            const lastIndex = dataArray.length - 1 - [...dataArray].reverse().findIndex(val => val !== null);
+                            
+                            // Show points at the start, end, and where segments connect
+                            return (index === firstIndex || index === lastIndex || 
+                                   (index > 0 && dataArray[index-1] === null && dataArray[index] !== null) ||
+                                   (index < dataArray.length-1 && dataArray[index+1] === null && dataArray[index] !== null)) ? 6 : 0;
+                        },
+                        pointBackgroundColor: '#38bdf8',
+                        pointBorderColor: '#1a1a24',
+                        pointBorderWidth: 2,
+                        tension: dataset.tension,
+                        fill: dataset.fill
+                    };
+                });
+                
+                // Calculate min and max for Y axis
+                let allValues = [];
+                datasets.forEach(ds => {
+                    ds.data.forEach(val => {
+                        if (val !== null) allValues.push(val);
+                    });
+                });
+                
+                const min = Math.floor(Math.min(...allValues) * 0.95);
+                const max = Math.ceil(Math.max(...allValues) * 1.05);
+                const stepSize = Math.ceil((max - min) / 5);
+                
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        aspectRatio: 2.5,
+                        layout: {
+                            padding: {
+                                top: 10,
+                                right: 10,
+                                bottom: 10,
+                                left: 10
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                backgroundColor: '#1e293b',
+                                titleColor: '#fff',
+                                bodyColor: '#cbd5e1',
+                                borderColor: '#475569',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: false,
+                                callbacks: {
+                                    title: function(tooltipItems) {
+                                        return labels[tooltipItems[0].dataIndex];
+                                    },
+                                    label: function(context) {
+                                        return `$${context.raw}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#94a3b8',
+                                    font: {
+                                        size: 11
+                                    }
+                                }
+                            },
+                            y: {
+                                min: min,
+                                max: max,
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)',
+                                    drawBorder: false
+                                },
+                                ticks: {
+                                    color: '#94a3b8',
+                                    font: {
+                                        size: 11
+                                    },
+                                    stepSize: stepSize,
+                                    callback: function(value) {
+                                        return value;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+                
+                return chart;
+            }
+            
+            // Function to update existing chart with real-time data
+            function updateChart(chart, chartData) {
+                // Generate new time labels for real-time updates (last 7 seconds)
+                const now = new Date();
+                const newLabels = [];
+                for (let i = 6; i >= 0; i--) {
+                    const time = new Date(now);
+                    time.setSeconds(now.getSeconds() - i);
+                    newLabels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+                }
+                
+                // Process datasets from the updated data
+                const datasets = chartData.map(dataset => {
+                    return {
+                        label: dataset.label,
+                        data: dataset.data,
+                        borderColor: dataset.borderColor,
+                        borderWidth: dataset.borderWidth,
+                        pointRadius: (ctx, options) => {
+                            const index = options.dataIndex;
+                            const dataArray = dataset.data;
+                            // Find the first and last non-null values in this dataset
+                            const firstIndex = dataArray.findIndex(val => val !== null);
+                            const lastIndex = dataArray.length - 1 - [...dataArray].reverse().findIndex(val => val !== null);
+                            
+                            // Show points at the start, end, and where segments connect
+                            return (index === firstIndex || index === lastIndex || 
+                                   (index > 0 && dataArray[index-1] === null && dataArray[index] !== null) ||
+                                   (index < dataArray.length-1 && dataArray[index+1] === null && dataArray[index] !== null)) ? 6 : 0;
+                        },
+                        pointBackgroundColor: '#38bdf8',
+                        pointBorderColor: '#1a1a24',
+                        pointBorderWidth: 2,
+                        tension: dataset.tension,
+                        fill: dataset.fill
+                    };
+                });
+                
+                // Calculate min and max for Y axis
+                let allValues = [];
+                datasets.forEach(ds => {
+                    ds.data.forEach(val => {
+                        if (val !== null) allValues.push(val);
+                    });
+                });
+                
+                const min = Math.floor(Math.min(...allValues) * 0.95);
+                const max = Math.ceil(Math.max(...allValues) * 1.05);
+                
+                // Update chart data and labels
+                chart.data.labels = newLabels;
+                chart.data.datasets = datasets;
+                chart.options.scales.y.min = min;
+                chart.options.scales.y.max = max;
+                chart.update();
+            }
+            
+            // Keep track of previous prices to determine if price went up or down
+            const previousPrices = {};
+            
+            // Function to update stock UI elements with pulse effect
+            function updateStockUI(symbol, data) {
+                // Get previous price or initialize if not set
+                if (!previousPrices[symbol]) {
+                    previousPrices[symbol] = data.price.replace('$', '');
+                }
+                
+                // Parse current price
+                const currentPrice = parseFloat(data.price.replace('$', '').replace(',', ''));
+                const prevPrice = parseFloat(previousPrices[symbol].replace(',', ''));
+                
+                // Determine if price went up or down
+                const priceDirection = currentPrice > prevPrice ? 'up' : 
+                                      currentPrice < prevPrice ? 'down' : 'same';
+                
+                // Update previous price for next comparison
+                previousPrices[symbol] = data.price.replace('$', '');
+                
+                // Update price and change with pulse effect
+                const priceElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-price`);
+                const changeElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-change`);
+                const hour1Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-1`);
+                const hour24Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-24`);
+                const days7Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .days-7`);
+                
+                // Find the index of this symbol in the stockData object
+                const symbolIndex = Object.keys(stockData).indexOf(symbol) + 1;
+                
+                // Modal elements - using specific IDs for more reliable updates
+                const modalPriceElement = document.getElementById(`modalPrice${symbolIndex}`);
+                const modalChangeElement = document.getElementById(`modalChange${symbolIndex}`);
+                
+                if (priceElement) {
+                    // Update text and add pulse effect
+                    priceElement.textContent = data.price;
+                    
+                    // Remove any existing pulse classes
+                    priceElement.classList.remove('pulse-green', 'pulse-red');
+                    
+                    // Add new pulse class if price changed
+                    if (priceDirection === 'up') {
+                        priceElement.classList.add('pulse-green');
+                    } else if (priceDirection === 'down') {
+                        priceElement.classList.add('pulse-red');
+                    }
+                }
+                
+                if (changeElement) {
+                    changeElement.textContent = data.change;
+                    changeElement.className = `stock-change ${data.changeClass} ms-2`;
+                }
+                
+                if (hour1Element) {
+                    hour1Element.textContent = data.hour1;
+                    hour1Element.className = `hour-1 ${data.hour1Class}`;
+                }
+                
+                if (hour24Element) {
+                    hour24Element.textContent = data.hour24;
+                    hour24Element.className = `hour-24 ${data.hour24Class}`;
+                }
+                
+                if (days7Element) {
+                    days7Element.textContent = data.days7;
+                    days7Element.className = `days-7 ${data.days7Class}`;
+                }
+                
+                if (modalPriceElement) {
+                    modalPriceElement.textContent = data.price;
+                    
+                    // Remove any existing pulse classes
+                    modalPriceElement.classList.remove('pulse-green', 'pulse-red');
+                    
+                    // Add new pulse class if price changed
+                    if (priceDirection === 'up') {
+                        modalPriceElement.classList.add('pulse-green');
+                    } else if (priceDirection === 'down') {
+                        modalPriceElement.classList.add('pulse-red');
+                    }
+                }
+                
+                if (modalChangeElement) {
+                    modalChangeElement.textContent = data.change;
+                    modalChangeElement.className = `modal-change ${data.changeClass}`;
+                }
+            }
+            
+            // Track currently open modal
+            let currentlyOpenModalSymbol = null;
+            
+            // Listen for modal open/close events
+            document.addEventListener('shown.bs.modal', function(event) {
+                if (event.target.classList.contains('modal')) {
+                    currentlyOpenModalSymbol = event.target.getAttribute('data-symbol');
+                }
+            });
+            
+            document.addEventListener('hidden.bs.modal', function() {
+                currentlyOpenModalSymbol = null;
+            });
+            
+            // Function to generate mock chart data if API fails
+            function generateMockChartData(symbol) {
+                // Generate base price based on symbol
+                let basePrice = 100;
+                // Use current timestamp as part of the seed for more randomness
+                const now = new Date();
+                const timeComponent = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
+                const symbolHash = symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+                const seedValue = symbolHash.toString() + timeComponent.toString();
+                const random = new Math.seedrandom(seedValue);
+                
+                // Use real stock prices as base values
+                switch (symbol) {
+                    case "TSLA": basePrice = 193.75; break;
+                    case "AAPL": basePrice = 175.45; break;
+                    case "MSFT": basePrice = 402.15; break;
+                    case "AMZN": basePrice = 178.25; break;
+                    case "NVDA": basePrice = 879.90; break;
+                    case "GOOGL": basePrice = 165.30; break;
+                    case "META": basePrice = 474.85; break;
+                    case "JPM": basePrice = 195.10; break;
+                    case "BRK.A": basePrice = 608495.00; break;
+                    case "V": basePrice = 275.65; break;
+                    default: basePrice = 100.00 + random() * 900; break;
+                }
+                
+                // Get previous price data if it exists
+                if (stockData[symbol] && stockData[symbol].previousMockData) {
+                    // Use the last price from previous data as our starting point
+                    const prevData = stockData[symbol].previousMockData;
+                    const lastValidIndex = [...prevData].reverse().findIndex(val => val !== null);
+                    if (lastValidIndex >= 0) {
+                        basePrice = prevData[prevData.length - 1 - lastValidIndex];
+                    }
+                }
+                
+                // Generate data points for real-time (7 seconds)
+                const data = [];
+                let currentPrice = basePrice;
+                for (let i = 0; i < 7; i++) {
+                    // More volatile for real-time data
+                    const variation = (random() * 0.02) - 0.01; // -1% to +1% per second
+                    currentPrice = currentPrice * (1 + variation);
+                    data.push(currentPrice);
+                }
+                
+                // Store this data for next update
+                if (!stockData[symbol]) stockData[symbol] = {};
+                stockData[symbol].previousMockData = [...data];
+                
+                // Determine color change points
+                const colorChangePoints = [];
+                for (let i = 1; i < data.length; i++) {
+                    if (i === 1 || (data[i] > data[i-1] && data[i-1] <= data[i-2]) ||
+                        (data[i] < data[i-1] && data[i-1] >= data[i-2])) {
+                        colorChangePoints.push(i-1);
+                    }
+                }
+                
+                if (colorChangePoints.length === 0) {
+                    colorChangePoints.push(3);
+                }
+                
+                // Create datasets
+                const datasets = [];
+                let startIndex = 0;
+                
+                for (let i = 0; i <= colorChangePoints.length; i++) {
+                    const endIndex = i < colorChangePoints.length ? colorChangePoints[i] : data.length - 1;
+                    const isGreen = endIndex > startIndex ? data[endIndex] >= data[startIndex] : (i % 2 === 0);
+                    
+                    const segmentData = Array(data.length).fill(null);
+                    for (let j = startIndex; j <= endIndex; j++) {
+                        segmentData[j] = data[j];
+                    }
+                    
+                    datasets.push({
+                        label: isGreen ? "Increase" : "Decrease",
+                        data: segmentData,
+                        borderColor: isGreen ? "#4ade80" : "#ef4444",
+                        borderWidth: 3,
+                        fill: false,
+                        tension: 0.4
+                    });
+                    
+                    startIndex = endIndex;
+                }
+                
+                return datasets;
+            }
+            
+            // Function to fetch updated stock data every second
+            function fetchStockUpdates() {
+                fetch('/Home/GetStockUpdates')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.stocks) {
+                            data.stocks.forEach(stock => {
+                                // Update stored data
+                                if (stockData[stock.symbol]) {
+                                    stockData[stock.symbol] = {
+                                        price: stock.price,
+                                        change: stock.change,
+                                        changeClass: stock.changeClass,
+                                        hour1: stock.hour1,
+                                        hour24: stock.hour24,
+                                        days7: stock.days7,
+                                        hour1Class: stock.hour1Class,
+                                        hour24Class: stock.hour24Class,
+                                        days7Class: stock.days7Class,
+                                        chartData: stock.chartData
+                                    };
+                                    
+                                    // Update UI
+                                    updateStockUI(stock.symbol, stockData[stock.symbol]);
+                                    
+                                    // Update chart if this stock's modal is open
+                                    if (currentlyOpenModalSymbol === stock.symbol) {
+                                        const chartId = `chart${Object.keys(stockData).indexOf(stock.symbol) + 1}`;
+                                        if (chartInstances[chartId]) {
+                                            updateChart(chartInstances[chartId], stock.chartData);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching stock updates:', error);
+                        
+                        // If API fails, update with mock data
+                        Object.keys(stockData).forEach(symbol => {
+                            // Generate random price change (-2% to +2%)
+                            const currentPrice = parseFloat(stockData[symbol].price.replace('$', '').replace(',', ''));
+                            const variation = (Math.random() * 0.04) - 0.02;
+                            const newPrice = currentPrice * (1 + variation);
+                            const formattedPrice = `$${newPrice.toFixed(2)}`;
+                            
+                            // Generate change percentage
+                            const changeValue = variation >= 0 ? `+${(variation * 100).toFixed(2)}%` : `${(variation * 100).toFixed(2)}%`;
+                            const changeClass = variation >= 0 ? 'text-success' : 'text-danger';
+                            
+                            // Update stored data with mock data
+                            stockData[symbol] = {
+                                ...stockData[symbol],
+                                price: formattedPrice,
+                                change: changeValue,
+                                changeClass: changeClass,
+                                chartData: generateMockChartData(symbol)
+                            };
+                            
+                            // Update UI
+                            updateStockUI(symbol, stockData[symbol]);
+                            
+                            // Update chart if this stock's modal is open
+                            if (currentlyOpenModalSymbol === symbol) {
+                                const chartId = `chart${Object.keys(stockData).indexOf(symbol) + 1}`;
+                                if (chartInstances[chartId]) {
+                                    updateChart(chartInstances[chartId], stockData[symbol].chartData);
+                                }
+                            }
+                        });
+                    })
+                    .finally(() => {
+                        // Schedule next update (every second)
+                        setTimeout(fetchStockUpdates, 3000);
+// Stock chart and real-time update functionality
+document.addEventListener('DOMContentLoaded', function () {
+    // Store chart instances and stock data
+    const chartInstances = {};
+    const stockData = {};
+    const previousPrices = {};
+    let currentOpenModal = null;
+    
+    // Function to create a new chart
+    function createChart(canvasId, chartData) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        
+        // Generate time labels for real-time updates
+        const now = new Date();
+        const labels = [];
+        for (let i = 6; i >= 0; i--) {
+            const time = new Date(now);
+            time.setSeconds(now.getSeconds() - i);
+            labels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        }
+        
+        // Process datasets
+        const datasets = chartData.map(dataset => ({
+            label: dataset.label,
+            data: dataset.data,
+            borderColor: dataset.borderColor,
+            borderWidth: dataset.borderWidth,
+            tension: dataset.tension || 0.4,
+            fill: dataset.fill || false,
+            pointRadius: 0
+        }));
+        
+        // Calculate min and max for Y axis
+        let allValues = [];
+        datasets.forEach(ds => {
+            ds.data.forEach(val => {
+                if (val !== null) allValues.push(val);
+            });
+        });
+        
+        const min = allValues.length ? Math.floor(Math.min(...allValues) * 0.95) : 0;
+        const max = allValues.length ? Math.ceil(Math.max(...allValues) * 1.05) : 100;
+        
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 0 // Disable animation for better performance
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: '#2a2d3a'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    },
+                    y: {
+                        min: min,
+                        max: max,
+                        grid: {
+                            color: '#2a2d3a'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#1a1a24',
+                        titleColor: '#fff',
+                        bodyColor: '#94a3b8',
+                        borderColor: '#2a2d3a',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
+    }
+    
+    // Function to update existing chart
+    function updateChart(chart, chartData) {
+        // Generate new time labels
+        const now = new Date();
+        const newLabels = [];
+        for (let i = 6; i >= 0; i--) {
+            const time = new Date(now);
+            time.setSeconds(now.getSeconds() - i);
+            newLabels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        }
+        
+        // Update datasets
+        const datasets = chartData.map(dataset => ({
+            label: dataset.label,
+            data: dataset.data,
+            borderColor: dataset.borderColor,
+            borderWidth: dataset.borderWidth,
+            tension: dataset.tension || 0.4,
+            fill: dataset.fill || false,
+            pointRadius: 0
+        }));
+        
+        // Calculate min and max for Y axis
+        let allValues = [];
+        datasets.forEach(ds => {
+            ds.data.forEach(val => {
+                if (val !== null) allValues.push(val);
+            });
+        });
+        
+        const min = Math.floor(Math.min(...allValues) * 0.95);
+        const max = Math.ceil(Math.max(...allValues) * 1.05);
+        
+        // Update chart
+        chart.data.labels = newLabels;
+        chart.data.datasets = datasets;
+        chart.options.scales.y.min = min;
+        chart.options.scales.y.max = max;
+        chart.update('none'); // Update without animation for better performance
+    }
+    
+    // Function to update stock UI with pulse effect
+    function updateStockUI(symbol, data) {
+        // Find the stock item elements
+        const priceElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-price`);
+        const changeElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-change`);
+        const hour1Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-1`);
+        const hour24Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-24`);
+        const days7Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .days-7`);
+        
+        // Find modal elements if modal is open
+        const modalPriceElement = currentOpenModal === symbol ? 
+            document.querySelector(`#${symbol}Modal .modal-price`) : null;
+        const modalChangeElement = currentOpenModal === symbol ? 
+            document.querySelector(`#${symbol}Modal .modal-change`) : null;
+        
+        // Determine price direction for pulse effect
+        let priceDirection = 'none';
+        if (data.changeClass.includes('text-success')) {
+            priceDirection = 'up';
+        } else if (data.changeClass.includes('text-danger')) {
+            priceDirection = 'down';
+        }
+        
+        // Update stock item elements
+        if (priceElement) {
+            const oldPrice = priceElement.textContent;
+            priceElement.textContent = data.price;
+            
+            // Apply pulse effect
+            priceElement.classList.remove('pulse-green', 'pulse-red');
+            if (priceDirection === 'up') {
+                priceElement.classList.add('pulse-green');
+            } else if (priceDirection === 'down') {
+                priceElement.classList.add('pulse-red');
+            }
+        }
+        
+        if (changeElement) {
+            changeElement.textContent = data.change;
+            changeElement.className = `stock-change ${data.changeClass}`;
+        }
+        
+        if (hour1Element && data.hour1) {
+            hour1Element.textContent = data.hour1;
+            hour1Element.className = `hour-1 ${data.hour1Class}`;
+        }
+        
+        if (hour24Element && data.hour24) {
+            hour24Element.textContent = data.hour24;
+            hour24Element.className = `hour-24 ${data.hour24Class}`;
+        }
+        
+        if (days7Element && data.days7) {
+            days7Element.textContent = data.days7;
+            days7Element.className = `days-7 ${data.days7Class}`;
+        }
+        
+        // Update modal elements if modal is open
+        if (modalPriceElement) {
+            modalPriceElement.textContent = data.price;
+            modalPriceElement.classList.remove('pulse-green', 'pulse-red');
+            if (priceDirection === 'up') {
+                modalPriceElement.classList.add('pulse-green');
+            } else if (priceDirection === 'down') {
+                modalPriceElement.classList.add('pulse-red');
+            }
+        }
+        
+        if (modalChangeElement) {
+            modalChangeElement.textContent = data.change;
+            modalChangeElement.className = `modal-change ${data.changeClass}`;
+        }
+    }
+    
+    // Initialize stock data from the page
+    function initializeStockData() {
+        const stockItems = document.querySelectorAll('.stock-item');
+        stockItems.forEach(item => {
+            const symbol = item.getAttribute('data-symbol');
+            const priceElement = item.querySelector('.stock-price');
+            const changeElement = item.querySelector('.stock-change');
+            const hour1Element = item.querySelector('.hour-1');
+            const hour24Element = item.querySelector('.hour-24');
+            const days7Element = item.querySelector('.days-7');
+            
+            if (symbol && priceElement) {
+                stockData[symbol] = {
+                    price: priceElement.textContent,
+                    change: changeElement ? changeElement.textContent : '',
+                    changeClass: changeElement ? changeElement.className.replace('stock-change', '').trim() : '',
+                    hour1: hour1Element ? hour1Element.textContent : '',
+                    hour24: hour24Element ? hour24Element.textContent : '',
+                    days7: days7Element ? days7Element.textContent : '',
+                    hour1Class: hour1Element ? hour1Element.className.replace('hour-1', '').trim() : '',
+                    hour24Class: hour24Element ? hour24Element.className.replace('hour-24', '').trim() : '',
+                    days7Class: days7Element ? days7Element.className.replace('days-7', '').trim() : '',
+                    chartData: [] // Will be populated when modal opens
+                };
+                
+                previousPrices[symbol] = parseFloat(priceElement.textContent.replace('$', '').replace(',', ''));
+            }
+        });
+    }
+    
+    // Set up modal event listeners
+    function setupModalListeners() {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            const symbol = modal.getAttribute('data-symbol');
+            const modalId = modal.id;
+            const chartId = modalId.replace('Modal', '');
+            
+            modal.addEventListener('shown.bs.modal', function() {
+                currentOpenModal = symbol;
+                // Fetch fresh data for the chart
+                fetchStockData(symbol, chartId);
+            });
+            
+            modal.addEventListener('hidden.bs.modal', function() {
+                currentOpenModal = null;
+            });
+        });
+    }
+    
+    // Function to fetch stock data for a specific symbol
+    function fetchStockData(symbol, chartId) {
+        fetch('/Home/GetStockUpdates')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.stocks) {
+                    const stockInfo = data.stocks.find(s => s.symbol === symbol);
+                    if (stockInfo) {
+                        // Update stored data
+                        stockData[symbol] = {
+                            price: stockInfo.price,
+                            change: stockInfo.change,
+                            changeClass: stockInfo.changeClass,
+                            hour1: stockInfo.hour1,
+                            hour24: stockInfo.hour24,
+                            days7: stockInfo.days7,
+                            hour1Class: stockInfo.hour1Class,
+                            hour24Class: stockInfo.hour24Class,
+                            days7Class: stockInfo.days7Class,
+                            chartData: stockInfo.chartData
+                        };
+                        
+                        // Store the price for future mock data generation
+                        previousPrices[symbol] = parseFloat(stockInfo.price.replace('$', '').replace(',', ''));
+                        
+                        // Update UI
+                        updateStockUI(symbol, stockData[symbol]);
+                        
+                        // Create or update chart
+                        if (!chartInstances[chartId]) {
+                            chartInstances[chartId] = createChart(chartId, stockData[symbol].chartData);
+                        } else {
+                            updateChart(chartInstances[chartId], stockData[symbol].chartData);
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stock data:', error);
+                // Generate mock data if API fails
+                generateMockData(symbol, chartId);
+            });
+    }
+    
+    // Function to fetch real-time stock updates for all stocks
+    function fetchStockUpdates() {
+        fetch('/Home/GetStockUpdates')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.stocks) {
+                    data.stocks.forEach(stock => {
+                        if (stockData[stock.symbol]) {
+                            // Update stored data
+                            stockData[stock.symbol] = {
+                                price: stock.price,
+                                change: stock.change,
+                                changeClass: stock.changeClass,
+                                hour1: stock.hour1 || stockData[stock.symbol].hour1,
+                                hour24: stock.hour24 || stockData[stock.symbol].hour24,
+                                days7: stock.days7 || stockData[stock.symbol].days7,
+                                hour1Class: stock.hour1Class || stockData[stock.symbol].hour1Class,
+                                hour24Class: stock.hour24Class || stockData[stock.symbol].hour24Class,
+                                days7Class: stock.days7Class || stockData[stock.symbol].days7Class,
+                                chartData: stock.chartData || stockData[stock.symbol].chartData
+                            };
+                            
+                            // Store the price for future mock data generation
+                            previousPrices[stock.symbol] = parseFloat(stock.price.replace('$', '').replace(',', ''));
+                            
+                            // Update UI
+                            updateStockUI(stock.symbol, stockData[stock.symbol]);
+                            
+                            // Update chart if this stock's modal is open
+                            if (currentOpenModal === stock.symbol) {
+                                const chartId = document.querySelector(`.modal[data-symbol="${stock.symbol}"]`).id.replace('Modal', '');
+                                if (chartInstances[chartId]) {
+                                    updateChart(chartInstances[chartId], stock.chartData);
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stock updates:', error);
+                // Generate mock data updates if API fails
+                generateMockUpdates();
+            })
+            .finally(() => {
+                // Always schedule next update, every 3 seconds
+                setTimeout(fetchStockUpdates, 3000);
+            });
+    }
+    
+    // Function to generate mock data for a specific stock
+    function generateMockData(symbol, chartId) {
+        // Generate random price change (±10 from recent price)
+        const currentPrice = previousPrices[symbol] || 100;
+        const variation = (Math.random() * 20) - 10; // ±10 variation
+        const newPrice = Math.max(currentPrice + variation, 1); // Ensure price stays positive
+        const formattedPrice = `$${newPrice.toFixed(2)}`;
+        
+        // Generate change percentage
+        const changeValue = variation >= 0 ? `+${(variation).toFixed(2)}` : `${(variation).toFixed(2)}`;
+        const changeClass = variation >= 0 ? 'text-success' : 'text-danger';
+        
+        // Generate mock chart data
+        const mockChartData = [];
+        const colors = [variation >= 0 ? '#4ade80' : '#ef4444'];
+        const dataPoints = [];
+        
+        // Generate 7 data points
+        let price = currentPrice;
+        for (let i = 0; i < 7; i++) {
+            dataPoints.push(price);
+            price = Math.max(price + ((Math.random() * 10) - 5), 1); // Add variation to each point
+        }
+        
+        mockChartData.push({
+            label: variation >= 0 ? 'Increase' : 'Decrease',
+            data: dataPoints,
+            borderColor: colors[0],
+            borderWidth: 3,
+            tension: 0.4,
+            fill: false
+        });
+        
+        // Update stored data with mock data
+        stockData[symbol] = {
+            ...stockData[symbol],
+            price: formattedPrice,
+            change: changeValue,
+            changeClass: changeClass,
+            chartData: mockChartData
+        };
+        // Ensure the base price for next mock is updated
+        previousPrices[symbol] = newPrice;
+        
+        // Update UI
+        updateStockUI(symbol, stockData[symbol]);
+        
+        // Create or update chart
+        if (!chartInstances[chartId]) {
+            chartInstances[chartId] = createChart(chartId, mockChartData);
+        } else {
+            updateChart(chartInstances[chartId], mockChartData);
+        }
+    }
+    
+    // Function to generate mock updates for all stocks
+    function generateMockUpdates() {
+        Object.keys(stockData).forEach(symbol => {
+            // Generate random price change (±10 from recent price)
+            const currentPrice = parseFloat(stockData[symbol].price.replace('$', '').replace(',', ''));
+            const variation = (Math.random() * 20) - 10; // ±10 variation
+            const newPrice = Math.max(currentPrice + variation, 1); // Ensure price stays positive
+            const formattedPrice = `$${newPrice.toFixed(2)}`;
+            
+            // Generate change percentage
+            const changeValue = variation >= 0 ? `+${(variation).toFixed(2)}` : `${(variation).toFixed(2)}`;
+            const changeClass = variation >= 0 ? 'text-success' : 'text-danger';
+            
+            // Generate mock chart data
+            let mockChartData = stockData[symbol].chartData;
+            
+            if (mockChartData && mockChartData.length > 0) {
+                mockChartData = mockChartData.map(dataset => {
+                    // Shift data points left and add new point
+                    const newData = [...dataset.data.slice(1), newPrice];
+                    return {
+                        ...dataset,
+                        data: newData,
+                        borderColor: variation >= 0 ? '#4ade80' : '#ef4444'
+                    };
+                });
+            } else {
+                // Create new mock chart data if none exists
+                const dataPoints = [];
+                let price = currentPrice;
+                for (let i = 0; i < 7; i++) {
+                    dataPoints.push(price);
+                    price = Math.max(price + ((Math.random() * 10) - 5), 1); // Add variation to each point
+                }
+                
+                mockChartData = [{
+                    label: variation >= 0 ? 'Increase' : 'Decrease',
+                    data: dataPoints,
+                    borderColor: variation >= 0 ? '#4ade80' : '#ef4444',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: false
+                }];
+            }
+            
+            // Update stored data with mock data
+            stockData[symbol] = {
+                ...stockData[symbol],
+                price: formattedPrice,
+                change: changeValue,
+                changeClass: changeClass,
+                chartData: mockChartData
+            };
+            // Ensure the base price for next mock is updated
+            previousPrices[symbol] = newPrice;
+            
+            // Update UI
+            updateStockUI(symbol, stockData[symbol]);
+            
+            // Update chart if this stock's modal is open
+            if (currentOpenModal === symbol) {
+                const chartId = document.querySelector(`.modal[data-symbol="${symbol}"]`).id.replace('Modal', '');
+                if (chartInstances[chartId]) {
+                    updateChart(chartInstances[chartId], mockChartData);
+                }
+            }
+        });
+    }
+    
+    // Initialize the page
+    initializeStockData();
+    setupModalListeners();
+    
+    // Start fetching updates immediately
+    fetchStockUpdates();
+    
+    // Expose functions to global scope for debugging
+    window.stocksApp = {
+        chartInstances,
+        stockData,
+        previousPrices,
+        updateChart,
+        createChart,
+        fetchStockData,
+        generateMockData
+    };
+});// Stock chart and real-time update functionality
+document.addEventListener('DOMContentLoaded', function () {
+    // Store chart instances and stock data
+    const chartInstances = {};
+    const stockData = {};
+    const previousPrices = {};
+    let currentOpenModal = null;
+    
+    // Function to create a new chart
+    function createChart(canvasId, chartData) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        
+        // Generate time labels for real-time updates
+        const now = new Date();
+        const labels = [];
+        for (let i = 6; i >= 0; i--) {
+            const time = new Date(now);
+            time.setSeconds(now.getSeconds() - i);
+            labels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        }
+        
+        // Process datasets
+        const datasets = chartData.map(dataset => ({
+            label: dataset.label,
+            data: dataset.data,
+            borderColor: dataset.borderColor,
+            borderWidth: dataset.borderWidth,
+            tension: dataset.tension || 0.4,
+            fill: dataset.fill || false,
+            pointRadius: 0
+        }));
+        
+        // Calculate min and max for Y axis
+        let allValues = [];
+        datasets.forEach(ds => {
+            ds.data.forEach(val => {
+                if (val !== null) allValues.push(val);
+            });
+        });
+        
+        const min = allValues.length ? Math.floor(Math.min(...allValues) * 0.95) : 0;
+        const max = allValues.length ? Math.ceil(Math.max(...allValues) * 1.05) : 100;
+        
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 0 // Disable animation for better performance
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: '#2a2d3a'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    },
+                    y: {
+                        min: min,
+                        max: max,
+                        grid: {
+                            color: '#2a2d3a'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#1a1a24',
+                        titleColor: '#fff',
+                        bodyColor: '#94a3b8',
+                        borderColor: '#2a2d3a',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
+    }
+    
+    // Function to update existing chart
+    function updateChart(chart, chartData) {
+        // Generate new time labels
+        const now = new Date();
+        const newLabels = [];
+        for (let i = 6; i >= 0; i--) {
+            const time = new Date(now);
+            time.setSeconds(now.getSeconds() - i);
+            newLabels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        }
+        
+        // Update datasets
+        const datasets = chartData.map(dataset => ({
+            label: dataset.label,
+            data: dataset.data,
+            borderColor: dataset.borderColor,
+            borderWidth: dataset.borderWidth,
+            tension: dataset.tension || 0.4,
+            fill: dataset.fill || false,
+            pointRadius: 0
+        }));
+        
+        // Calculate min and max for Y axis
+        let allValues = [];
+        datasets.forEach(ds => {
+            ds.data.forEach(val => {
+                if (val !== null) allValues.push(val);
+            });
+        });
+        
+        const min = Math.floor(Math.min(...allValues) * 0.95);
+        const max = Math.ceil(Math.max(...allValues) * 1.05);
+        
+        // Update chart
+        chart.data.labels = newLabels;
+        chart.data.datasets = datasets;
+        chart.options.scales.y.min = min;
+        chart.options.scales.y.max = max;
+        chart.update('none'); // Update without animation for better performance
+    }
+    
+    // Function to update stock UI with pulse effect
+    function updateStockUI(symbol, data) {
+        // Find the stock item elements
+        const priceElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-price`);
+        const changeElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-change`);
+        const hour1Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-1`);
+        const hour24Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-24`);
+        const days7Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .days-7`);
+        
+        // Find modal elements if modal is open
+        const modalPriceElement = currentOpenModal === symbol ? 
+            document.querySelector(`#${symbol}Modal .modal-price`) : null;
+        const modalChangeElement = currentOpenModal === symbol ? 
+            document.querySelector(`#${symbol}Modal .modal-change`) : null;
+        
+        // Determine price direction for pulse effect
+        let priceDirection = 'none';
+        if (data.changeClass.includes('text-success')) {
+            priceDirection = 'up';
+        } else if (data.changeClass.includes('text-danger')) {
+            priceDirection = 'down';
+        }
+        
+        // Update stock item elements
+        if (priceElement) {
+            const oldPrice = priceElement.textContent;
+            priceElement.textContent = data.price;
+            
+            // Apply pulse effect
+            priceElement.classList.remove('pulse-green', 'pulse-red');
+            if (priceDirection === 'up') {
+                priceElement.classList.add('pulse-green');
+            } else if (priceDirection === 'down') {
+                priceElement.classList.add('pulse-red');
+            }
+        }
+        
+        if (changeElement) {
+            changeElement.textContent = data.change;
+            changeElement.className = `stock-change ${data.changeClass}`;
+        }
+        
+        if (hour1Element && data.hour1) {
+            hour1Element.textContent = data.hour1;
+            hour1Element.className = `hour-1 ${data.hour1Class}`;
+        }
+        
+        if (hour24Element && data.hour24) {
+            hour24Element.textContent = data.hour24;
+            hour24Element.className = `hour-24 ${data.hour24Class}`;
+        }
+        
+        if (days7Element && data.days7) {
+            days7Element.textContent = data.days7;
+            days7Element.className = `days-7 ${data.days7Class}`;
+        }
+        
+        // Update modal elements if modal is open
+        if (modalPriceElement) {
+            modalPriceElement.textContent = data.price;
+            modalPriceElement.classList.remove('pulse-green', 'pulse-red');
+            if (priceDirection === 'up') {
+                modalPriceElement.classList.add('pulse-green');
+            } else if (priceDirection === 'down') {
+                modalPriceElement.classList.add('pulse-red');
+            }
+        }
+        
+        if (modalChangeElement) {
+            modalChangeElement.textContent = data.change;
+            modalChangeElement.className = `modal-change ${data.changeClass}`;
+        }
+    }
+    
+    // Initialize stock data from the page
+    function initializeStockData() {
+        const stockItems = document.querySelectorAll('.stock-item');
+        stockItems.forEach(item => {
+            const symbol = item.getAttribute('data-symbol');
+            const priceElement = item.querySelector('.stock-price');
+            const changeElement = item.querySelector('.stock-change');
+            const hour1Element = item.querySelector('.hour-1');
+            const hour24Element = item.querySelector('.hour-24');
+            const days7Element = item.querySelector('.days-7');
+            
+            if (symbol && priceElement) {
+                stockData[symbol] = {
+                    price: priceElement.textContent,
+                    change: changeElement ? changeElement.textContent : '',
+                    changeClass: changeElement ? changeElement.className.replace('stock-change', '').trim() : '',
+                    hour1: hour1Element ? hour1Element.textContent : '',
+                    hour24: hour24Element ? hour24Element.textContent : '',
+                    days7: days7Element ? days7Element.textContent : '',
+                    hour1Class: hour1Element ? hour1Element.className.replace('hour-1', '').trim() : '',
+                    hour24Class: hour24Element ? hour24Element.className.replace('hour-24', '').trim() : '',
+                    days7Class: days7Element ? days7Element.className.replace('days-7', '').trim() : '',
+                    chartData: [] // Will be populated when modal opens
+                };
+                
+                previousPrices[symbol] = parseFloat(priceElement.textContent.replace('$', '').replace(',', ''));
+            }
+        });
+    }
+    
+    // Set up modal event listeners
+    function setupModalListeners() {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            const symbol = modal.getAttribute('data-symbol');
+            const modalId = modal.id;
+            const chartId = modalId.replace('Modal', '');
+            
+            modal.addEventListener('shown.bs.modal', function() {
+                currentOpenModal = symbol;
+                // Fetch fresh data for the chart
+                fetchStockData(symbol, chartId);
+            });
+            
+            modal.addEventListener('hidden.bs.modal', function() {
+                currentOpenModal = null;
+            });
+        });
+    }
+    
+    // Function to fetch stock data for a specific symbol
+    function fetchStockData(symbol, chartId) {
+        fetch('/Home/GetStockUpdates')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.stocks) {
+                    const stockInfo = data.stocks.find(s => s.symbol === symbol);
+                    if (stockInfo) {
+                        // Update stored data
+                        stockData[symbol] = {
+                            price: stockInfo.price,
+                            change: stockInfo.change,
+                            changeClass: stockInfo.changeClass,
+                            hour1: stockInfo.hour1,
+                            hour24: stockInfo.hour24,
+                            days7: stockInfo.days7,
+                            hour1Class: stockInfo.hour1Class,
+                            hour24Class: stockInfo.hour24Class,
+                            days7Class: stockInfo.days7Class,
+                            chartData: stockInfo.chartData
+                        };
+                        
+                        // Store the price for future mock data generation
+                        previousPrices[symbol] = parseFloat(stockInfo.price.replace('$', '').replace(',', ''));
+                        
+                        // Update UI
+                        updateStockUI(symbol, stockData[symbol]);
+                        
+                        // Create or update chart
+                        if (!chartInstances[chartId]) {
+                            chartInstances[chartId] = createChart(chartId, stockData[symbol].chartData);
+                        } else {
+                            updateChart(chartInstances[chartId], stockData[symbol].chartData);
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stock data:', error);
+                // Generate mock data if API fails
+                generateMockData(symbol, chartId);
+            });
+    }
+    
+    // Function to fetch real-time stock updates for all stocks
+    function fetchStockUpdates() {
+        fetch('/Home/GetStockUpdates')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.stocks) {
+                    data.stocks.forEach(stock => {
+                        if (stockData[stock.symbol]) {
+                            // Update stored data
+                            stockData[stock.symbol] = {
+                                price: stock.price,
+                                change: stock.change,
+                                changeClass: stock.changeClass,
+                                hour1: stock.hour1 || stockData[stock.symbol].hour1,
+                                hour24: stock.hour24 || stockData[stock.symbol].hour24,
+                                days7: stock.days7 || stockData[stock.symbol].days7,
+                                hour1Class: stock.hour1Class || stockData[stock.symbol].hour1Class,
+                                hour24Class: stock.hour24Class || stockData[stock.symbol].hour24Class,
+                                days7Class: stock.days7Class || stockData[stock.symbol].days7Class,
+                                chartData: stock.chartData || stockData[stock.symbol].chartData
+                            };
+                            
+                            // Store the price for future mock data generation
+                            previousPrices[stock.symbol] = parseFloat(stock.price.replace('$', '').replace(',', ''));
+                            
+                            // Update UI
+                            updateStockUI(stock.symbol, stockData[stock.symbol]);
+                            
+                            // Update chart if this stock's modal is open
+                            if (currentOpenModal === stock.symbol) {
+                                const chartId = document.querySelector(`.modal[data-symbol="${stock.symbol}"]`).id.replace('Modal', '');
+                                if (chartInstances[chartId]) {
+                                    updateChart(chartInstances[chartId], stock.chartData);
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stock updates:', error);
+                // Generate mock data updates if API fails
+                generateMockUpdates();
+            })
+            .finally(() => {
+                // Always schedule next update, every 3 seconds
+                setTimeout(fetchStockUpdates, 3000);
+            });
+    }
+    
+    // Function to generate mock data for a specific stock
+    function generateMockData(symbol, chartId) {
+        // Generate random price change (±10 from recent price)
+        const currentPrice = previousPrices[symbol] || 100;
+        const variation = (Math.random() * 20) - 10; // ±10 variation
+        const newPrice = Math.max(currentPrice + variation, 1); // Ensure price stays positive
+        const formattedPrice = `$${newPrice.toFixed(2)}`;
+        
+        // Generate change percentage
+        const changeValue = variation >= 0 ? `+${(variation).toFixed(2)}` : `${(variation).toFixed(2)}`;
+        const changeClass = variation >= 0 ? 'text-success' : 'text-danger';
+        
+        // Generate mock chart data
+        const mockChartData = [];
+        const colors = [variation >= 0 ? '#4ade80' : '#ef4444'];
+        const dataPoints = [];
+        
+        // Generate 7 data points
+        let price = currentPrice;
+        for (let i = 0; i < 7; i++) {
+            dataPoints.push(price);
+            price = Math.max(price + ((Math.random() * 10) - 5), 1); // Add variation to each point
+        }
+        
+        mockChartData.push({
+            label: variation >= 0 ? 'Increase' : 'Decrease',
+            data: dataPoints,
+            borderColor: colors[0],
+            borderWidth: 3,
+            tension: 0.4,
+            fill: false
+        });
+        
+        // Update stored data with mock data
+        stockData[symbol] = {
+            ...stockData[symbol],
+            price: formattedPrice,
+            change: changeValue,
+            changeClass: changeClass,
+            chartData: mockChartData
+        };
+        // Ensure the base price for next mock is updated
+        previousPrices[symbol] = newPrice;
+        
+        // Update UI
+        updateStockUI(symbol, stockData[symbol]);
+        
+        // Create or update chart
+        if (!chartInstances[chartId]) {
+            chartInstances[chartId] = createChart(chartId, mockChartData);
+        } else {
+            updateChart(chartInstances[chartId], mockChartData);
+        }
+    }
+    
+    // Function to generate mock updates for all stocks
+    function generateMockUpdates() {
+        Object.keys(stockData).forEach(symbol => {
+            // Generate random price change (±10 from recent price)
+            const currentPrice = parseFloat(stockData[symbol].price.replace('$', '').replace(',', ''));
+            const variation = (Math.random() * 20) - 10; // ±10 variation
+            const newPrice = Math.max(currentPrice + variation, 1); // Ensure price stays positive
+            const formattedPrice = `$${newPrice.toFixed(2)}`;
+            
+            // Generate change percentage
+            const changeValue = variation >= 0 ? `+${(variation).toFixed(2)}` : `${(variation).toFixed(2)}`;
+            const changeClass = variation >= 0 ? 'text-success' : 'text-danger';
+            
+            // Generate mock chart data
+            let mockChartData = stockData[symbol].chartData;
+            
+            if (mockChartData && mockChartData.length > 0) {
+                mockChartData = mockChartData.map(dataset => {
+                    // Shift data points left and add new point
+                    const newData = [...dataset.data.slice(1), newPrice];
+                    return {
+                        ...dataset,
+                        data: newData,
+                        borderColor: variation >= 0 ? '#4ade80' : '#ef4444'
+                    };
+                });
+            } else {
+                // Create new mock chart data if none exists
+                const dataPoints = [];
+                let price = currentPrice;
+                for (let i = 0; i < 7; i++) {
+                    dataPoints.push(price);
+                    price = Math.max(price + ((Math.random() * 10) - 5), 1); // Add variation to each point
+                }
+                
+                mockChartData = [{
+                    label: variation >= 0 ? 'Increase' : 'Decrease',
+                    data: dataPoints,
+                    borderColor: variation >= 0 ? '#4ade80' : '#ef4444',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: false
+                }];
+            }
+            
+            // Update stored data with mock data
+            stockData[symbol] = {
+                ...stockData[symbol],
+                price: formattedPrice,
+                change: changeValue,
+                changeClass: changeClass,
+                chartData: mockChartData
+            };
+            // Ensure the base price for next mock is updated
+            previousPrices[symbol] = newPrice;
+            
+            // Update UI
+            updateStockUI(symbol, stockData[symbol]);
+            
+            // Update chart if this stock's modal is open
+            if (currentOpenModal === symbol) {
+                const chartId = document.querySelector(`.modal[data-symbol="${symbol}"]`).id.replace('Modal', '');
+                if (chartInstances[chartId]) {
+                    updateChart(chartInstances[chartId], mockChartData);
+                }
+            }
+        });
+    }
+    
+    // Initialize the page
+    initializeStockData();
+    setupModalListeners();
+    
+    // Start fetching updates immediately
+    fetchStockUpdates();
+    
+    // Expose functions to global scope for debugging
+    window.stocksApp = {
+        chartInstances,
+        stockData,
+        previousPrices,
+        updateChart,
+        createChart,
+        fetchStockData,
+        generateMockData
+    };
+});// Stock chart and real-time update functionality
+document.addEventListener('DOMContentLoaded', function () {
+    // Store chart instances and stock data
+    const chartInstances = {};
+    const stockData = {};
+    const previousPrices = {};
+    let currentOpenModal = null;
+    
+    // Function to create a new chart
+    function createChart(canvasId, chartData) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        
+        // Generate time labels for real-time updates
+        const now = new Date();
+        const labels = [];
+        for (let i = 6; i >= 0; i--) {
+            const time = new Date(now);
+            time.setSeconds(now.getSeconds() - i);
+            labels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        }
+        
+        // Process datasets
+        const datasets = chartData.map(dataset => ({
+            label: dataset.label,
+            data: dataset.data,
+            borderColor: dataset.borderColor,
+            borderWidth: dataset.borderWidth,
+            tension: dataset.tension || 0.4,
+            fill: dataset.fill || false,
+            pointRadius: 0
+        }));
+        
+        // Calculate min and max for Y axis
+        let allValues = [];
+        datasets.forEach(ds => {
+            ds.data.forEach(val => {
+                if (val !== null) allValues.push(val);
+            });
+        });
+        
+        const min = allValues.length ? Math.floor(Math.min(...allValues) * 0.95) : 0;
+        const max = allValues.length ? Math.ceil(Math.max(...allValues) * 1.05) : 100;
+        
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 0 // Disable animation for better performance
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: '#2a2d3a'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    },
+                    y: {
+                        min: min,
+                        max: max,
+                        grid: {
+                            color: '#2a2d3a'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#1a1a24',
+                        titleColor: '#fff',
+                        bodyColor: '#94a3b8',
+                        borderColor: '#2a2d3a',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
+    }
+    
+    // Function to update existing chart
+    function updateChart(chart, chartData) {
+        // Generate new time labels
+        const now = new Date();
+        const newLabels = [];
+        for (let i = 6; i >= 0; i--) {
+            const time = new Date(now);
+            time.setSeconds(now.getSeconds() - i);
+            newLabels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        }
+        
+        // Update datasets
+        const datasets = chartData.map(dataset => ({
+            label: dataset.label,
+            data: dataset.data,
+            borderColor: dataset.borderColor,
+            borderWidth: dataset.borderWidth,
+            tension: dataset.tension || 0.4,
+            fill: dataset.fill || false,
+            pointRadius: 0
+        }));
+        
+        // Calculate min and max for Y axis
+        let allValues = [];
+        datasets.forEach(ds => {
+            ds.data.forEach(val => {
+                if (val !== null) allValues.push(val);
+            });
+        });
+        
+        const min = Math.floor(Math.min(...allValues) * 0.95);
+        const max = Math.ceil(Math.max(...allValues) * 1.05);
+        
+        // Update chart
+        chart.data.labels = newLabels;
+        chart.data.datasets = datasets;
+        chart.options.scales.y.min = min;
+        chart.options.scales.y.max = max;
+        chart.update('none'); // Update without animation for better performance
+    }
+    
+    // Function to update stock UI with pulse effect
+    function updateStockUI(symbol, data) {
+        // Find the stock item elements
+        const priceElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-price`);
+        const changeElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-change`);
+        const hour1Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-1`);
+        const hour24Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-24`);
+        const days7Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .days-7`);
+        
+        // Find modal elements if modal is open
+        const modalPriceElement = currentOpenModal === symbol ? 
+            document.querySelector(`#${symbol}Modal .modal-price`) : null;
+        const modalChangeElement = currentOpenModal === symbol ? 
+            document.querySelector(`#${symbol}Modal .modal-change`) : null;
+        
+        // Determine price direction for pulse effect
+        let priceDirection = 'none';
+        if (data.changeClass.includes('text-success')) {
+            priceDirection = 'up';
+        } else if (data.changeClass.includes('text-danger')) {
+            priceDirection = 'down';
+        }
+        
+        // Update stock item elements
+        if (priceElement) {
+            const oldPrice = priceElement.textContent;
+            priceElement.textContent = data.price;
+            
+            // Apply pulse effect
+            priceElement.classList.remove('pulse-green', 'pulse-red');
+            if (priceDirection === 'up') {
+                priceElement.classList.add('pulse-green');
+            } else if (priceDirection === 'down') {
+                priceElement.classList.add('pulse-red');
+            }
+        }
+        
+        if (changeElement) {
+            changeElement.textContent = data.change;
+            changeElement.className = `stock-change ${data.changeClass}`;
+        }
+        
+        if (hour1Element && data.hour1) {
+            hour1Element.textContent = data.hour1;
+            hour1Element.className = `hour-1 ${data.hour1Class}`;
+        }
+        
+        if (hour24Element && data.hour24) {
+            hour24Element.textContent = data.hour24;
+            hour24Element.className = `hour-24 ${data.hour24Class}`;
+        }
+        
+        if (days7Element && data.days7) {
+            days7Element.textContent = data.days7;
+            days7Element.className = `days-7 ${data.days7Class}`;
+        }
+        
+        // Update modal elements if modal is open
+        if (modalPriceElement) {
+            modalPriceElement.textContent = data.price;
+            modalPriceElement.classList.remove('pulse-green', 'pulse-red');
+            if (priceDirection === 'up') {
+                modalPriceElement.classList.add('pulse-green');
+            } else if (priceDirection === 'down') {
+                modalPriceElement.classList.add('pulse-red');
+            }
+        }
+        
+        if (modalChangeElement) {
+            modalChangeElement.textContent = data.change;
+            modalChangeElement.className = `modal-change ${data.changeClass}`;
+        }
+    }
+    
+    // Initialize stock data from the page
+    function initializeStockData() {
+        const stockItems = document.querySelectorAll('.stock-item');
+        stockItems.forEach(item => {
+            const symbol = item.getAttribute('data-symbol');
+            const priceElement = item.querySelector('.stock-price');
+            const changeElement = item.querySelector('.stock-change');
+            const hour1Element = item.querySelector('.hour-1');
+            const hour24Element = item.querySelector('.hour-24');
+            const days7Element = item.querySelector('.days-7');
+            
+            if (symbol && priceElement) {
+                stockData[symbol] = {
+                    price: priceElement.textContent,
+                    change: changeElement ? changeElement.textContent : '',
+                    changeClass: changeElement ? changeElement.className.replace('stock-change', '').trim() : '',
+                    hour1: hour1Element ? hour1Element.textContent : '',
+                    hour24: hour24Element ? hour24Element.textContent : '',
+                    days7: days7Element ? days7Element.textContent : '',
+                    hour1Class: hour1Element ? hour1Element.className.replace('hour-1', '').trim() : '',
+                    hour24Class: hour24Element ? hour24Element.className.replace('hour-24', '').trim() : '',
+                    days7Class: days7Element ? days7Element.className.replace('days-7', '').trim() : '',
+                    chartData: [] // Will be populated when modal opens
+                };
+                
+                previousPrices[symbol] = parseFloat(priceElement.textContent.replace('$', '').replace(',', ''));
+            }
+        });
+    }
+    
+    // Set up modal event listeners
+    function setupModalListeners() {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            const symbol = modal.getAttribute('data-symbol');
+            const modalId = modal.id;
+            const chartId = modalId.replace('Modal', '');
+            
+            modal.addEventListener('shown.bs.modal', function() {
+                currentOpenModal = symbol;
+                // Fetch fresh data for the chart
+                fetchStockData(symbol, chartId);
+            });
+            
+            modal.addEventListener('hidden.bs.modal', function() {
+                currentOpenModal = null;
+            });
+        });
+    }
+    
+    // Function to fetch stock data for a specific symbol
+    function fetchStockData(symbol, chartId) {
+        fetch('/Home/GetStockUpdates')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.stocks) {
+                    const stockInfo = data.stocks.find(s => s.symbol === symbol);
+                    if (stockInfo) {
+                        // Update stored data
+                        stockData[symbol] = {
+                            price: stockInfo.price,
+                            change: stockInfo.change,
+                            changeClass: stockInfo.changeClass,
+                            hour1: stockInfo.hour1,
+                            hour24: stockInfo.hour24,
+                            days7: stockInfo.days7,
+                            hour1Class: stockInfo.hour1Class,
+                            hour24Class: stockInfo.hour24Class,
+                            days7Class: stockInfo.days7Class,
+                            chartData: stockInfo.chartData
+                        };
+                        
+                        // Store the price for future mock data generation
+                        previousPrices[symbol] = parseFloat(stockInfo.price.replace('$', '').replace(',', ''));
+                        
+                        // Update UI
+                        updateStockUI(symbol, stockData[symbol]);
+                        
+                        // Create or update chart
+                        if (!chartInstances[chartId]) {
+                            chartInstances[chartId] = createChart(chartId, stockData[symbol].chartData);
+                        } else {
+                            updateChart(chartInstances[chartId], stockData[symbol].chartData);
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stock data:', error);
+                // Generate mock data if API fails
+                generateMockData(symbol, chartId);
+            });
+    }
+    
+    // Function to fetch real-time stock updates for all stocks
+    function fetchStockUpdates() {
+        fetch('/Home/GetStockUpdates')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.stocks) {
+                    data.stocks.forEach(stock => {
+                        if (stockData[stock.symbol]) {
+                            // Update stored data
+                            stockData[stock.symbol] = {
+                                price: stock.price,
+                                change: stock.change,
+                                changeClass: stock.changeClass,
+                                hour1: stock.hour1 || stockData[stock.symbol].hour1,
+                                hour24: stock.hour24 || stockData[stock.symbol].hour24,
+                                days7: stock.days7 || stockData[stock.symbol].days7,
+                                hour1Class: stock.hour1Class || stockData[stock.symbol].hour1Class,
+                                hour24Class: stock.hour24Class || stockData[stock.symbol].hour24Class,
+                                days7Class: stock.days7Class || stockData[stock.symbol].days7Class,
+                                chartData: stock.chartData || stockData[stock.symbol].chartData
+                            };
+                            
+                            // Store the price for future mock data generation
+                            previousPrices[stock.symbol] = parseFloat(stock.price.replace('$', '').replace(',', ''));
+                            
+                            // Update UI
+                            updateStockUI(stock.symbol, stockData[stock.symbol]);
+                            
+                            // Update chart if this stock's modal is open
+                            if (currentOpenModal === stock.symbol) {
+                                const chartId = document.querySelector(`.modal[data-symbol="${stock.symbol}"]`).id.replace('Modal', '');
+                                if (chartInstances[chartId]) {
+                                    updateChart(chartInstances[chartId], stock.chartData);
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stock updates:', error);
+                // Generate mock data updates if API fails
+                generateMockUpdates();
+            })
+            .finally(() => {
+                // Always schedule next update, every 3 seconds
+                setTimeout(fetchStockUpdates, 3000);
+            });
+    }
+    
+    // Function to generate mock data for a specific stock
+    function generateMockData(symbol, chartId) {
+        // Generate random price change (±10 from recent price)
+        const currentPrice = previousPrices[symbol] || 100;
+        const variation = (Math.random() * 20) - 10; // ±10 variation
+        const newPrice = Math.max(currentPrice + variation, 1); // Ensure price stays positive
+        const formattedPrice = `$${newPrice.toFixed(2)}`;
+        
+        // Generate change percentage
+        const changeValue = variation >= 0 ? `+${(variation).toFixed(2)}` : `${(variation).toFixed(2)}`;
+        const changeClass = variation >= 0 ? 'text-success' : 'text-danger';
+        
+        // Generate mock chart data
+        const mockChartData = [];
+        const colors = [variation >= 0 ? '#4ade80' : '#ef4444'];
+        const dataPoints = [];
+        
+        // Generate 7 data points
+        let price = currentPrice;
+        for (let i = 0; i < 7; i++) {
+            dataPoints.push(price);
+            price = Math.max(price + ((Math.random() * 10) - 5), 1); // Add variation to each point
+        }
+        
+        mockChartData.push({
+            label: variation >= 0 ? 'Increase' : 'Decrease',
+            data: dataPoints,
+            borderColor: colors[0],
+            borderWidth: 3,
+            tension: 0.4,
+            fill: false
+        });
+        
+        // Update stored data with mock data
+        stockData[symbol] = {
+            ...stockData[symbol],
+            price: formattedPrice,
+            change: changeValue,
+            changeClass: changeClass,
+            chartData: mockChartData
+        };
+        // Ensure the base price for next mock is updated
+        previousPrices[symbol] = newPrice;
+        
+        // Update UI
+        updateStockUI(symbol, stockData[symbol]);
+        
+        // Create or update chart
+        if (!chartInstances[chartId]) {
+            chartInstances[chartId] = createChart(chartId, mockChartData);
+        } else {
+            updateChart(chartInstances[chartId], mockChartData);
+        }
+    }
+    
+    // Function to generate mock updates for all stocks
+    function generateMockUpdates() {
+        Object.keys(stockData).forEach(symbol => {
+            // Generate random price change (±10 from recent price)
+            const currentPrice = parseFloat(stockData[symbol].price.replace('$', '').replace(',', ''));
+            const variation = (Math.random() * 20) - 10; // ±10 variation
+            const newPrice = Math.max(currentPrice + variation, 1); // Ensure price stays positive
+            const formattedPrice = `$${newPrice.toFixed(2)}`;
+            
+            // Generate change percentage
+            const changeValue = variation >= 0 ? `+${(variation).toFixed(2)}` : `${(variation).toFixed(2)}`;
+            const changeClass = variation >= 0 ? 'text-success' : 'text-danger';
+            
+            // Generate mock chart data
+            let mockChartData = stockData[symbol].chartData;
+            
+            if (mockChartData && mockChartData.length > 0) {
+                mockChartData = mockChartData.map(dataset => {
+                    // Shift data points left and add new point
+                    const newData = [...dataset.data.slice(1), newPrice];
+                    return {
+                        ...dataset,
+                        data: newData,
+                        borderColor: variation >= 0 ? '#4ade80' : '#ef4444'
+                    };
+                });
+            } else {
+                // Create new mock chart data if none exists
+                const dataPoints = [];
+                let price = currentPrice;
+                for (let i = 0; i < 7; i++) {
+                    dataPoints.push(price);
+                    price = Math.max(price + ((Math.random() * 10) - 5), 1); // Add variation to each point
+                }
+                
+                mockChartData = [{
+                    label: variation >= 0 ? 'Increase' : 'Decrease',
+                    data: dataPoints,
+                    borderColor: variation >= 0 ? '#4ade80' : '#ef4444',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: false
+                }];
+            }
+            
+            // Update stored data with mock data
+            stockData[symbol] = {
+                ...stockData[symbol],
+                price: formattedPrice,
+                change: changeValue,
+                changeClass: changeClass,
+                chartData: mockChartData
+            };
+            // Ensure the base price for next mock is updated
+            previousPrices[symbol] = newPrice;
+            
+            // Update UI
+            updateStockUI(symbol, stockData[symbol]);
+            
+            // Update chart if this stock's modal is open
+            if (currentOpenModal === symbol) {
+                const chartId = document.querySelector(`.modal[data-symbol="${symbol}"]`).id.replace('Modal', '');
+                if (chartInstances[chartId]) {
+                    updateChart(chartInstances[chartId], mockChartData);
+                }
+            }
+        });
+    }
+    
+    // Initialize the page
+    initializeStockData();
+    setupModalListeners();
+    
+    // Start fetching updates immediately
+    fetchStockUpdates();
+    
+    // Expose functions to global scope for debugging
+    window.stocksApp = {
+        chartInstances,
+        stockData,
+        previousPrices,
+        updateChart,
+        createChart,
+        fetchStockData,
+        generateMockData
+    };
+});// Stock chart and real-time update functionality
+document.addEventListener('DOMContentLoaded', function () {
+    // Store chart instances and stock data
+    const chartInstances = {};
+    const stockData = {};
+    const previousPrices = {};
+    let currentOpenModal = null;
+    
+    // Function to create a new chart
+    function createChart(canvasId, chartData) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        
+        // Generate time labels for real-time updates
+        const now = new Date();
+        const labels = [];
+        for (let i = 6; i >= 0; i--) {
+            const time = new Date(now);
+            time.setSeconds(now.getSeconds() - i);
+            labels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        }
+        
+        // Process datasets
+        const datasets = chartData.map(dataset => ({
+            label: dataset.label,
+            data: dataset.data,
+            borderColor: dataset.borderColor,
+            borderWidth: dataset.borderWidth,
+            tension: dataset.tension || 0.4,
+            fill: dataset.fill || false,
+            pointRadius: 0
+        }));
+        
+        // Calculate min and max for Y axis
+        let allValues = [];
+        datasets.forEach(ds => {
+            ds.data.forEach(val => {
+                if (val !== null) allValues.push(val);
+            });
+        });
+        
+        const min = allValues.length ? Math.floor(Math.min(...allValues) * 0.95) : 0;
+        const max = allValues.length ? Math.ceil(Math.max(...allValues) * 1.05) : 100;
+        
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 0 // Disable animation for better performance
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: '#2a2d3a'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    },
+                    y: {
+                        min: min,
+                        max: max,
+                        grid: {
+                            color: '#2a2d3a'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#1a1a24',
+                        titleColor: '#fff',
+                        bodyColor: '#94a3b8',
+                        borderColor: '#2a2d3a',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
+    }
+    
+    // Function to update existing chart
+    function updateChart(chart, chartData) {
+        // Generate new time labels
+        const now = new Date();
+        const newLabels = [];
+        for (let i = 6; i >= 0; i--) {
+            const time = new Date(now);
+            time.setSeconds(now.getSeconds() - i);
+            newLabels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        }
+        
+        // Update datasets
+        const datasets = chartData.map(dataset => ({
+            label: dataset.label,
+            data: dataset.data,
+            borderColor: dataset.borderColor,
+            borderWidth: dataset.borderWidth,
+            tension: dataset.tension || 0.4,
+            fill: dataset.fill || false,
+            pointRadius: 0
+        }));
+        
+        // Calculate min and max for Y axis
+        let allValues = [];
+        datasets.forEach(ds => {
+            ds.data.forEach(val => {
+                if (val !== null) allValues.push(val);
+            });
+        });
+        
+        const min = Math.floor(Math.min(...allValues) * 0.95);
+        const max = Math.ceil(Math.max(...allValues) * 1.05);
+        
+        // Update chart
+        chart.data.labels = newLabels;
+        chart.data.datasets = datasets;
+        chart.options.scales.y.min = min;
+        chart.options.scales.y.max = max;
+        chart.update('none'); // Update without animation for better performance
+    }
+    
+    // Function to update stock UI with pulse effect
+    function updateStockUI(symbol, data) {
+        // Find the stock item elements
+        const priceElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-price`);
+        const changeElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-change`);
+        const hour1Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-1`);
+        const hour24Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-24`);
+        const days7Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .days-7`);
+        
+        // Find modal elements if modal is open
+        const modalPriceElement = currentOpenModal === symbol ? 
+            document.querySelector(`#${symbol}Modal .modal-price`) : null;
+        const modalChangeElement = currentOpenModal === symbol ? 
+            document.querySelector(`#${symbol}Modal .modal-change`) : null;
+        
+        // Determine price direction for pulse effect
+        let priceDirection = 'none';
+        if (data.changeClass.includes('text-success')) {
+            priceDirection = 'up';
+        } else if (data.changeClass.includes('text-danger')) {
+            priceDirection = 'down';
+        }
+        
+        // Update stock item elements
+        if (priceElement) {
+            const oldPrice = priceElement.textContent;
+            priceElement.textContent = data.price;
+            
+            // Apply pulse effect
+            priceElement.classList.remove('pulse-green', 'pulse-red');
+            if (priceDirection === 'up') {
+                priceElement.classList.add('pulse-green');
+            } else if (priceDirection === 'down') {
+                priceElement.classList.add('pulse-red');
+            }
+        }
+        
+        if (changeElement) {
+            changeElement.textContent = data.change;
+            changeElement.className = `stock-change ${data.changeClass}`;
+        }
+        
+        if (hour1Element && data.hour1) {
+            hour1Element.textContent = data.hour1;
+            hour1Element.className = `hour-1 ${data.hour1Class}`;
+        }
+        
+        if (hour24Element && data.hour24) {
+            hour24Element.textContent = data.hour24;
+            hour24Element.className = `hour-24 ${data.hour24Class}`;
+        }
+        
+        if (days7Element && data.days7) {
+            days7Element.textContent = data.days7;
+            days7Element.className = `days-7 ${data.days7Class}`;
+        }
+        
+        // Update modal elements if modal is open
+        if (modalPriceElement) {
+            modalPriceElement.textContent = data.price;
+            modalPriceElement.classList.remove('pulse-green', 'pulse-red');
+            if (priceDirection === 'up') {
+                modalPriceElement.classList.add('pulse-green');
+            } else if (priceDirection === 'down') {
+                modalPriceElement.classList.add('pulse-red');
+            }
+        }
+        
+        if (modalChangeElement) {
+            modalChangeElement.textContent = data.change;
+            modalChangeElement.className = `modal-change ${data.changeClass}`;
+        }
+    }
+    
+    // Initialize stock data from the page
+    function initializeStockData() {
+        const stockItems = document.querySelectorAll('.stock-item');
+        stockItems.forEach(item => {
+            const symbol = item.getAttribute('data-symbol');
+            const priceElement = item.querySelector('.stock-price');
+            const changeElement = item.querySelector('.stock-change');
+            const hour1Element = item.querySelector('.hour-1');
+            const hour24Element = item.querySelector('.hour-24');
+            const days7Element = item.querySelector('.days-7');
+            
+            if (symbol && priceElement) {
+                stockData[symbol] = {
+                    price: priceElement.textContent,
+                    change: changeElement ? changeElement.textContent : '',
+                    changeClass: changeElement ? changeElement.className.replace('stock-change', '').trim() : '',
+                    hour1: hour1Element ? hour1Element.textContent : '',
+                    hour24: hour24Element ? hour24Element.textContent : '',
+                    days7: days7Element ? days7Element.textContent : '',
+                    hour1Class: hour1Element ? hour1Element.className.replace('hour-1', '').trim() : '',
+                    hour24Class: hour24Element ? hour24Element.className.replace('hour-24', '').trim() : '',
+                    days7Class: days7Element ? days7Element.className.replace('days-7', '').trim() : '',
+                    chartData: [] // Will be populated when modal opens
+                };
+                
+                previousPrices[symbol] = parseFloat(priceElement.textContent.replace('$', '').replace(',', ''));
+            }
+        });
+    }
+    
+    // Set up modal event listeners
+    function setupModalListeners() {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            const symbol = modal.getAttribute('data-symbol');
+            const modalId = modal.id;
+            const chartId = modalId.replace('Modal', '');
+            
+            modal.addEventListener('shown.bs.modal', function() {
+                currentOpenModal = symbol;
+                // Fetch fresh data for the chart
+                fetchStockData(symbol, chartId);
+            });
+            
+            modal.addEventListener('hidden.bs.modal', function() {
+                currentOpenModal = null;
+            });
+        });
+    }
+    
+    // Function to fetch stock data for a specific symbol
+    function fetchStockData(symbol, chartId) {
+        fetch('/Home/GetStockUpdates')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.stocks) {
+                    const stockInfo = data.stocks.find(s => s.symbol === symbol);
+                    if (stockInfo) {
+                        // Update stored data
+                        stockData[symbol] = {
+                            price: stockInfo.price,
+                            change: stockInfo.change,
+                            changeClass: stockInfo.changeClass,
+                            hour1: stockInfo.hour1,
+                            hour24: stockInfo.hour24,
+                            days7: stockInfo.days7,
+                            hour1Class: stockInfo.hour1Class,
+                            hour24Class: stockInfo.hour24Class,
+                            days7Class: stockInfo.days7Class,
+                            chartData: stockInfo.chartData
+                        };
+                        
+                        // Store the price for future mock data generation
+                        previousPrices[symbol] = parseFloat(stockInfo.price.replace('$', '').replace(',', ''));
+                        
+                        // Update UI
+                        updateStockUI(symbol, stockData[symbol]);
+                        
+                        // Create or update chart
+                        if (!chartInstances[chartId]) {
+                            chartInstances[chartId] = createChart(chartId, stockData[symbol].chartData);
+                        } else {
+                            updateChart(chartInstances[chartId], stockData[symbol].chartData);
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stock data:', error);
+                // Generate mock data if API fails
+                generateMockData(symbol, chartId);
+            });
+    }
+    
+    // Function to fetch real-time stock updates for all stocks
+    function fetchStockUpdates() {
+        fetch('/Home/GetStockUpdates')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.stocks) {
+                    data.stocks.forEach(stock => {
+                        if (stockData[stock.symbol]) {
+                            // Update stored data
+                            stockData[stock.symbol] = {
+                                price: stock.price,
+                                change: stock.change,
+                                changeClass: stock.changeClass,
+                                hour1: stock.hour1 || stockData[stock.symbol].hour1,
+                                hour24: stock.hour24 || stockData[stock.symbol].hour24,
+                                days7: stock.days7 || stockData[stock.symbol].days7,
+                                hour1Class: stock.hour1Class || stockData[stock.symbol].hour1Class,
+                                hour24Class: stock.hour24Class || stockData[stock.symbol].hour24Class,
+                                days7Class: stock.days7Class || stockData[stock.symbol].days7Class,
+                                chartData: stock.chartData || stockData[stock.symbol].chartData
+                            };
+                            
+                            // Store the price for future mock data generation
+                            previousPrices[stock.symbol] = parseFloat(stock.price.replace('$', '').replace(',', ''));
+                            
+                            // Update UI
+                            updateStockUI(stock.symbol, stockData[stock.symbol]);
+                            
+                            // Update chart if this stock's modal is open
+                            if (currentOpenModal === stock.symbol) {
+                                const chartId = document.querySelector(`.modal[data-symbol="${stock.symbol}"]`).id.replace('Modal', '');
+                                if (chartInstances[chartId]) {
+                                    updateChart(chartInstances[chartId], stock.chartData);
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stock updates:', error);
+                // Generate mock data updates if API fails
+                generateMockUpdates();
+            })
+            .finally(() => {
+                // Always schedule next update, every 3 seconds
+                setTimeout(fetchStockUpdates, 3000);
+            });
+    }
+    
+    // Function to generate mock data for a specific stock
+    function generateMockData(symbol, chartId) {
+        // Generate random price change (±10 from recent price)
+        const currentPrice = previousPrices[symbol] || 100;
+        const variation = (Math.random() * 20) - 10; // ±10 variation
+        const newPrice = Math.max(currentPrice + variation, 1); // Ensure price stays positive
+        const formattedPrice = `$${newPrice.toFixed(2)}`;
+        
+        // Generate change percentage
+        const changeValue = variation >= 0 ? `+${(variation).toFixed(2)}` : `${(variation).toFixed(2)}`;
+        const changeClass = variation >= 0 ? 'text-success' : 'text-danger';
+        
+        // Generate mock chart data
+        const mockChartData = [];
+        const colors = [variation >= 0 ? '#4ade80' : '#ef4444'];
+        const dataPoints = [];
+        
+        // Generate 7 data points
+        let price = currentPrice;
+        for (let i = 0; i < 7; i++) {
+            dataPoints.push(price);
+            price = Math.max(price + ((Math.random() * 10) - 5), 1); // Add variation to each point
+        }
+        
+        mockChartData.push({
+            label: variation >= 0 ? 'Increase' : 'Decrease',
+            data: dataPoints,
+            borderColor: colors[0],
+            borderWidth: 3,
+            tension: 0.4,
+            fill: false
+        });
+        
+        // Update stored data with mock data
+        stockData[symbol] = {
+            ...stockData[symbol],
+            price: formattedPrice,
+            change: changeValue,
+            changeClass: changeClass,
+            chartData: mockChartData
+        };
+        // Ensure the base price for next mock is updated
+        previousPrices[symbol] = newPrice;
+        
+        // Update UI
+        updateStockUI(symbol, stockData[symbol]);
+        
+        // Create or update chart
+        if (!chartInstances[chartId]) {
+            chartInstances[chartId] = createChart(chartId, mockChartData);
+        } else {
+            updateChart(chartInstances[chartId], mockChartData);
+        }
+    }
+    
+    // Function to generate mock updates for all stocks
+    function generateMockUpdates() {
+        Object.keys(stockData).forEach(symbol => {
+            // Generate random price change (±10 from recent price)
+            const currentPrice = parseFloat(stockData[symbol].price.replace('$', '').replace(',', ''));
+            const variation = (Math.random() * 20) - 10; // ±10 variation
+            const newPrice = Math.max(currentPrice + variation, 1); // Ensure price stays positive
+            const formattedPrice = `$${newPrice.toFixed(2)}`;
+            
+            // Generate change percentage
+            const changeValue = variation >= 0 ? `+${(variation).toFixed(2)}` : `${(variation).toFixed(2)}`;
+            const changeClass = variation >= 0 ? 'text-success' : 'text-danger';
+            
+            // Generate mock chart data
+            let mockChartData = stockData[symbol].chartData;
+            
+            if (mockChartData && mockChartData.length > 0) {
+                mockChartData = mockChartData.map(dataset => {
+                    // Shift data points left and add new point
+                    const newData = [...dataset.data.slice(1), newPrice];
+                    return {
+                        ...dataset,
+                        data: newData,
+                        borderColor: variation >= 0 ? '#4ade80' : '#ef4444'
+                    };
+                });
+            } else {
+                // Create new mock chart data if none exists
+                const dataPoints = [];
+                let price = currentPrice;
+                for (let i = 0; i < 7; i++) {
+                    dataPoints.push(price);
+                    price = Math.max(price + ((Math.random() * 10) - 5), 1); // Add variation to each point
+                }
+                
+                mockChartData = [{
+                    label: variation >= 0 ? 'Increase' : 'Decrease',
+                    data: dataPoints,
+                    borderColor: variation >= 0 ? '#4ade80' : '#ef4444',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: false
+                }];
+            }
+            
+            // Update stored data with mock data
+            stockData[symbol] = {
+                ...stockData[symbol],
+                price: formattedPrice,
+                change: changeValue,
+                changeClass: changeClass,
+                chartData: mockChartData
+            };
+            // Ensure the base price for next mock is updated
+            previousPrices[symbol] = newPrice;
+            
+            // Update UI
+            updateStockUI(symbol, stockData[symbol]);
+            
+            // Update chart if this stock's modal is open
+            if (currentOpenModal === symbol) {
+                const chartId = document.querySelector(`.modal[data-symbol="${symbol}"]`).id.replace('Modal', '');
+                if (chartInstances[chartId]) {
+                    updateChart(chartInstances[chartId], mockChartData);
+                }
+            }
+        });
+    }
+    
+    // Initialize the page
+    initializeStockData();
+    setupModalListeners();
+    
+    // Start fetching updates immediately
+    fetchStockUpdates();
+    
+    // Expose functions to global scope for debugging
+    window.stocksApp = {
+        chartInstances,
+        stockData,
+        previousPrices,
+        updateChart,
+        createChart,
+        fetchStockData,
+        generateMockData
+    };
+});// Stock chart and real-time update functionality
+document.addEventListener('DOMContentLoaded', function () {
+    // Store chart instances and stock data
+    const chartInstances = {};
+    const stockData = {};
+    const previousPrices = {};
+    let currentOpenModal = null;
+    
+    // Function to create a new chart
+    function createChart(canvasId, chartData) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        
+        // Generate time labels for real-time updates
+        const now = new Date();
+        const labels = [];
+        for (let i = 6; i >= 0; i--) {
+            const time = new Date(now);
+            time.setSeconds(now.getSeconds() - i);
+            labels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        }
+        
+        // Process datasets
+        const datasets = chartData.map(dataset => ({
+            label: dataset.label,
+            data: dataset.data,
+            borderColor: dataset.borderColor,
+            borderWidth: dataset.borderWidth,
+            tension: dataset.tension || 0.4,
+            fill: dataset.fill || false,
+            pointRadius: 0
+        }));
+        
+        // Calculate min and max for Y axis
+        let allValues = [];
+        datasets.forEach(ds => {
+            ds.data.forEach(val => {
+                if (val !== null) allValues.push(val);
+            });
+        });
+        
+        const min = allValues.length ? Math.floor(Math.min(...allValues) * 0.95) : 0;
+        const max = allValues.length ? Math.ceil(Math.max(...allValues) * 1.05) : 100;
+        
+        return new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 0 // Disable animation for better performance
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            color: '#2a2d3a'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    },
+                    y: {
+                        min: min,
+                        max: max,
+                        grid: {
+                            color: '#2a2d3a'
+                        },
+                        ticks: {
+                            color: '#94a3b8'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#1a1a24',
+                        titleColor: '#fff',
+                        bodyColor: '#94a3b8',
+                        borderColor: '#2a2d3a',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
+    }
+    
+    // Function to update existing chart
+    function updateChart(chart, chartData) {
+        // Generate new time labels
+        const now = new Date();
+        const newLabels = [];
+        for (let i = 6; i >= 0; i--) {
+            const time = new Date(now);
+            time.setSeconds(now.getSeconds() - i);
+            newLabels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        }
+        
+        // Update datasets
+        const datasets = chartData.map(dataset => ({
+            label: dataset.label,
+            data: dataset.data,
+            borderColor: dataset.borderColor,
+            borderWidth: dataset.borderWidth,
+            tension: dataset.tension || 0.4,
+            fill: dataset.fill || false,
+            pointRadius: 0
+        }));
+        
+        // Calculate min and max for Y axis
+        let allValues = [];
+        datasets.forEach(ds => {
+            ds.data.forEach(val => {
+                if (val !== null) allValues.push(val);
+            });
+        });
+        
+        const min = Math.floor(Math.min(...allValues) * 0.95);
+        const max = Math.ceil(Math.max(...allValues) * 1.05);
+        
+        // Update chart
+        chart.data.labels = newLabels;
+        chart.data.datasets = datasets;
+        chart.options.scales.y.min = min;
+        chart.options.scales.y.max = max;
+        chart.update('none'); // Update without animation for better performance
+    }
+    
+    // Function to update stock UI with pulse effect
+    function updateStockUI(symbol, data) {
+        // Find the stock item elements
+        const priceElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-price`);
+        const changeElement = document.querySelector(`.stock-item[data-symbol="${symbol}"] .stock-change`);
+        const hour1Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-1`);
+        const hour24Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .hour-24`);
+        const days7Element = document.querySelector(`.stock-item[data-symbol="${symbol}"] .days-7`);
+        
+        // Find modal elements if modal is open
+        const modalPriceElement = currentOpenModal === symbol ? 
+            document.querySelector(`#${symbol}Modal .modal-price`) : null;
+        const modalChangeElement = currentOpenModal === symbol ? 
+            document.querySelector(`#${symbol}Modal .modal-change`) : null;
+        
+        // Determine price direction for pulse effect
+        let priceDirection = 'none';
+        if (data.changeClass.includes('text-success')) {
+            priceDirection = 'up';
+        } else if (data.changeClass.includes('text-danger')) {
+            priceDirection = 'down';
+        }
+        
+        // Update stock item elements
+        if (priceElement) {
+            const oldPrice = priceElement.textContent;
+            priceElement.textContent = data.price;
+            
+            // Apply pulse effect
+            priceElement.classList.remove('pulse-green', 'pulse-red');
+            if (priceDirection === 'up') {
+                priceElement.classList.add('pulse-green');
+            } else if (priceDirection === 'down') {
+                priceElement.classList.add('pulse-red');
+            }
+        }
+        
+        if (changeElement) {
+            changeElement.textContent = data.change;
+            changeElement.className = `stock-change ${data.changeClass}`;
+        }
+        
+        if (hour1Element && data.hour1) {
+            hour1Element.textContent = data.hour1;
+            hour1Element.className = `hour-1 ${data.hour1Class}`;
+        }
+        
+        if (hour24Element && data.hour24) {
+            hour24Element.textContent = data.hour24;
+            hour24Element.className = `hour-24 ${data.hour24Class}`;
+        }
+        
+        if (days7Element && data.days7) {
+            days7Element.textContent = data.days7;
+            days7Element.className = `days-7 ${data.days7Class}`;
+        }
+        
+        // Update modal elements if modal is open
+        if (modalPriceElement) {
+            modalPriceElement.textContent = data.price;
+            modalPriceElement.classList.remove('pulse-green', 'pulse-red');
+            if (priceDirection === 'up') {
+                modalPriceElement.classList.add('pulse-green');
+            } else if (priceDirection === 'down') {
+                modalPriceElement.classList.add('pulse-red');
+            }
+        }
+        
+        if (modalChangeElement) {
+            modalChangeElement.textContent = data.change;
+            modalChangeElement.className = `modal-change ${data.changeClass}`;
+        }
+    }
+    
+    // Initialize stock data from the page
+    function initializeStockData() {
+        const stockItems = document.querySelectorAll('.stock-item');
+        stockItems.forEach(item => {
+            const symbol = item.getAttribute('data-symbol');
+            const priceElement = item.querySelector('.stock-price');
+            const changeElement = item.querySelector('.stock-change');
+            const hour1Element = item.querySelector('.hour-1');
+            const hour24Element = item.querySelector('.hour-24');
+            const days7Element = item.querySelector('.days-7');
+            
+            if (symbol && priceElement) {
+                stockData[symbol] = {
+                    price: priceElement.textContent,
+                    change: changeElement ? changeElement.textContent : '',
+                    changeClass: changeElement ? changeElement.className.replace('stock-change', '').trim() : '',
+                    hour1: hour1Element ? hour1Element.textContent : '',
+                    hour24: hour24Element ? hour24Element.textContent : '',
+                    days7: days7Element ? days7Element.textContent : '',
+                    hour1Class: hour1Element ? hour1Element.className.replace('hour-1', '').trim() : '',
+                    hour24Class: hour24Element ? hour24Element.className.replace('hour-24', '').trim() : '',
+                    days7Class: days7Element ? days7Element.className.replace('days-7', '').trim() : '',
+                    chartData: [] // Will be populated when modal opens
+                };
+                
+                previousPrices[symbol] = parseFloat(priceElement.textContent.replace('$', '').replace(',', ''));
+            }
+        });
+    }
+    
+    // Set up modal event listeners
+    function setupModalListeners() {
+        const modals = document.querySelectorAll('.modal');
+        modals.forEach(modal => {
+            const symbol = modal.getAttribute('data-symbol');
+            const modalId = modal.id;
+            const chartId = modalId.replace('Modal', '');
+            
+            modal.addEventListener('shown.bs.modal', function() {
+                currentOpenModal = symbol;
+                // Fetch fresh data for the chart
+                fetchStockData(symbol, chartId);
+            });
+            
+            modal.addEventListener('hidden.bs.modal', function() {
+                currentOpenModal = null;
+            });
+        });
+    }
+    
+    // Function to fetch stock data for a specific symbol
+    function fetchStockData(symbol, chartId) {
+        fetch('/Home/GetStockUpdates')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.stocks) {
+                    const stockInfo = data.stocks.find(s => s.symbol === symbol);
+                    if (stockInfo) {
+                        // Update stored data
+                        stockData[symbol] = {
+                            price: stockInfo.price,
+                            change: stockInfo.change,
+                            changeClass: stockInfo.changeClass,
+                            hour1: stockInfo.hour1,
+                            hour24: stockInfo.hour24,
+                            days7: stockInfo.days7,
+                            hour1Class: stockInfo.hour1Class,
+                            hour24Class: stockInfo.hour24Class,
+                            days7Class: stockInfo.days7Class,
+                            chartData: stockInfo.chartData
+                        };
+                        
+                        // Store the price for future mock data generation
+                        previousPrices[symbol] = parseFloat(stockInfo.price.replace('$', '').replace(',', ''));
+                        
+                        // Update UI
+                        updateStockUI(symbol, stockData[symbol]);
+                        
+                        // Create or update chart
+                        if (!chartInstances[chartId]) {
+                            chartInstances[chartId] = createChart(chartId, stockData[symbol].chartData);
+                        } else {
+                            updateChart(chartInstances[chartId], stockData[symbol].chartData);
+                        }
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stock data:', error);
+                // Generate mock data if API fails
+                generateMockData(symbol, chartId);
+            });
+    }
+    
+    // Function to fetch real-time stock updates for all stocks
+    function fetchStockUpdates() {
+        fetch('/Home/GetStockUpdates')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.stocks) {
+                    data.stocks.forEach(stock => {
+                        if (stockData[stock.symbol]) {
+                            // Update stored data
+                            stockData[stock.symbol] = {
+                                price: stock.price,
+                                change: stock.change,
+                                changeClass: stock.changeClass,
+                                hour1: stock.hour1 || stockData[stock.symbol].hour1,
+                                hour24: stock.hour24 || stockData[stock.symbol].hour24,
+                                days7: stock.days7 || stockData[stock.symbol].days7,
+                                hour1Class: stock.hour1Class || stockData[stock.symbol].hour1Class,
+                                hour24Class: stock.hour24Class || stockData[stock.symbol].hour24Class,
+                                days7Class: stock.days7Class || stockData[stock.symbol].days7Class,
+                                chartData: stock.chartData || stockData[stock.symbol].chartData
+                            };
+                            
+                            // Store the price for future mock data generation
+                            previousPrices[stock.symbol] = parseFloat(stock.price.replace('$', '').replace(',', ''));
+                            
+                            // Update UI
+                            updateStockUI(stock.symbol, stockData[stock.symbol]);
+                            
+                            // Update chart if this stock's modal is open
+                            if (currentOpenModal === stock.symbol) {
+                                const chartId = document.querySelector(`.modal[data-symbol="${stock.symbol}"]`).id.replace('Modal', '');
+                                if (chartInstances[chartId]) {
+                                    updateChart(chartInstances[chartId], stock.chartData);
+                                }
+                            }
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stock updates:', error);
+                // Generate mock data updates if API fails
+                generateMockUpdates();
+            })
+            .finally(() => {
+                // Always schedule next update, every 3 seconds
+                setTimeout(fetchStockUpdates, 3000);
+            });
+    }
+    
+    // Function to generate mock data for a specific stock
+    function generateMockData(symbol, chartId) {
+        // Generate random price change (±10 from recent price)
+        const currentPrice = previousPrices[symbol] || 100;
+        const variation = (Math.random() * 20) - 10; // ±10 variation
+        const newPrice = Math.max(currentPrice + variation, 1); // Ensure price stays positive
+        const formattedPrice = `$${newPrice.toFixed(2)}`;
+        
+        // Generate change percentage
+        const changeValue = variation >= 0 ? `+${(variation).toFixed(2)}` : `${(variation).toFixed(2)}`;
+        const changeClass = variation >= 0 ? 'text-success' : 'text-danger';
+        
+        // Generate mock chart data
+        const mockChartData = [];
+        const colors = [variation >= 0 ? '#4ade80' : '#ef4444'];
+        const dataPoints = [];
+        
+        // Generate 7 data points
+        let price = currentPrice;
+        for (let i = 0; i < 7; i++) {
+            dataPoints.push(price);
+            price = Math.max(price + ((Math.random() * 10) - 5), 1); // Add variation to each point
+        }
+        
+        mockChartData.push({
+            label: variation >= 0 ? 'Increase' : 'Decrease',
+            data: dataPoints,
+            borderColor: colors[0],
+            borderWidth: 3,
+            tension: 0.4,
+            fill: false
+        });
+        
+        // Update stored data with mock data
+        stockData[symbol] = {
+            ...stockData[symbol],
+            price: formattedPrice,
+            change: changeValue,
+            changeClass: changeClass,
+            chartData: mockChartData
+        };
+        // Ensure the base price for next mock is updated
+        previousPrices[symbol] = newPrice;
+        
+        // Update UI
+        updateStockUI(symbol, stockData[symbol]);
+        
+        // Create or update chart
+        if (!chartInstances[chartId]) {
+            chartInstances[chartId] = createChart(chartId, mockChartData);
+        } else {
+            updateChart(chartInstances[chartId], mockChartData);
+        }
+    }
+    
+    // Function to generate mock updates for all stocks
+    function generateMockUpdates() {
+        Object.keys(stockData).forEach(symbol => {
+            // Generate random price change (±10 from recent price)
+            const currentPrice = parseFloat(stockData[symbol].price.replace('$', '').replace(',', ''));
+            const variation = (Math.random() * 20) - 10; // ±10 variation
+            const newPrice = Math.max(currentPrice + variation, 1); // Ensure price stays positive
+            const formattedPrice = `$${newPrice.toFixed(2)}`;
+            
+            // Generate change percentage
+            const changeValue = variation >= 0 ? `+${(variation).toFixed(2)}` : `${(variation).toFixed(2)}`;
+            const changeClass = variation >= 0 ? 'text-success' : 'text-danger';
+            
+            // Generate mock chart data
+            let mockChartData = stockData[symbol].chartData;
+            
+            if (mockChartData && mockChartData.length > 0) {
+                mockChartData = mockChartData.map(dataset => {
+                    // Shift data points left and add new point
+                    const newData = [...dataset.data.slice(1), newPrice];
+                    return {
+                        ...dataset,
+                        data: newData,
+                        borderColor: variation >= 0 ? '#4ade80' : '#ef4444'
+                    };
+                });
+            } else {
+                // Create new mock chart data if none exists
+                const dataPoints = [];
+                let price = currentPrice;
+                for (let i = 0; i < 7; i++) {
+                    dataPoints.push(price);
+                    price = Math.max(price + ((Math.random() * 10) - 5), 1); // Add variation to each point
+                }
+                
+                mockChartData = [{
+                    label: variation >= 0 ? 'Increase' : 'Decrease',
+                    data: dataPoints,
+                    borderColor: variation >= 0 ? '#4ade80' : '#ef4444',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: false
+                }];
+            }
+            
+            // Update stored data with mock data
+            stockData[symbol] = {
+                ...stockData[symbol],
+                price: formattedPrice,
+                change: changeValue,
+                changeClass: changeClass,
+                chartData: mockChartData
+            };
+            // Ensure the base price for next mock is updated
+            previousPrices[symbol] = newPrice;
+            
+            // Update UI
+            updateStockUI(symbol, stockData[symbol]);
+            
+            // Update chart if this stock's modal is open
+            if (currentOpenModal === symbol) {
+                const chartId = document.querySelector(`.modal[data-symbol="${symbol}"]`).id.replace('Modal', '');
+                if (chartInstances[chartId]) {
+                    updateChart(chartInstances[chartId], mockChartData);
+                }
+            }
+        });
+    }
+    
+    // Initialize the page
+    initializeStockData();
+    setupModalListeners();
+    
+    // Start fetching updates immediately
+    fetchStockUpdates();
+    
+    // Expose functions to global scope for debugging
+    window.stocksApp = {
+        chartInstances,
+        stockData,
+        previousPrices,
+        updateChart,
+        createChart,
+        fetchStockData,
+        generateMockData
+    };
+});                    });
+            }
+            
+            // Start fetching updates immediately and then every second
+            fetchStockUpdates();
+
+            // Filter functionality to update heading
+            const filterOptions = document.querySelectorAll('input[name="filterOptions"]');
+            const titleElement = document.getElementById('stocksTitle');
+            const originalTitle = titleElement.textContent;
+
+            filterOptions.forEach(option => {
+                option.addEventListener('change', function() {
+                    if (this.id === 'filterPSEi') {
+                        titleElement.textContent = 'PSEi Stocks';
+                    } else if (this.id === 'filterTopGainers') {
+                        titleElement.textContent = 'Top Gainers';
+                    } else if (this.id === 'filterTopLosers') {
+                        titleElement.textContent = 'Top Losers';
+                    } else {
+                        titleElement.textContent = originalTitle;
+                    }
+                });
+            });
+
+                    // Search functionality
+                            const searchInput = document.getElementById('stockSearch');
+                              const stockItems = document.querySelectorAll('.stock-item');
+
+                    // Super simple filter implementation
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // Get all stock items
+                        const stockItems = document.querySelectorAll('.stock-item');
+
+                        // Get sector dropdown
+                        const sectorDropdown = document.getElementById('sectorDropdown');
+
+                        // Get market filter radios
+                        const marketRadios = document.querySelectorAll('input[name="filterOptions"]');
+
+                        // Get search input
+                        const searchInput = document.getElementById('stockSearch');
+
+                        // Get clear filters button
+                        const clearFiltersBtn = document.getElementById('clearFilters');
+
+                        // Add event listener to sector dropdown
+                        if (sectorDropdown) {
+                            sectorDropdown.addEventListener('change', function() {
+                                // Filter stocks based on selected sector
+                                filterStocks();
+                            });
+                        }
+
+                        // Add event listeners to market radios
+                        marketRadios.forEach(radio => {
+                            radio.addEventListener('change', function() {
+                                filterStocks();
+                            });
+                        });
+
+                        // Add event listener to search input
+                        if (searchInput) {
+                            searchInput.addEventListener('input', function() {
+                                filterStocks();
+                            });
+                        }
+
+                        // Add event listener to clear filters button
+                        if (clearFiltersBtn) {
+                            clearFiltersBtn.addEventListener('click', function() {
+                                // Reset sector dropdown to 'All'
+                                if (sectorDropdown) {
+                                    sectorDropdown.value = '';
+                                }
+
+                                // Reset market filter to 'All'
+                                const allFilterRadio = document.getElementById('filterAll');
+                                if (allFilterRadio) {
+                                    allFilterRadio.checked = true;
+                                }
+
+                                // Clear search input
+                                if (searchInput) {
+                                    searchInput.value = '';
+                                }
+
+                                // Show all stock items
+                                stockItems.forEach(item => {
+                                    item.style.display = 'flex';
+                                });
+                            });
+                        }
+
+                        // Function to filter stocks
+                        function filterStocks() {
+                            // Get active sector filter from dropdown
+                            let activeSector = sectorDropdown ? sectorDropdown.value : '';
+
+
+                            // Get active market filter
+                            let activeMarket = 'all';
+                            marketRadios.forEach(radio => {
+                                if (radio.checked) {
+                                    if (radio.id === 'filterTopGainers') {
+                                        activeMarket = 'gainers';
+                                    } else if (radio.id === 'filterTopLosers') {
+                                        activeMarket = 'losers';
+                                    }
+                                }
+                            });
+
+                            // Get search term
+                            const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+
+                            // Apply filters to each stock item
+                            stockItems.forEach(item => {
+                                // Get stock data
+                                const sectorBadge = item.querySelector('.stock-sector-badge');
+                                const sectorValue = sectorBadge ? sectorBadge.getAttribute('data-sector') : '';
+                                const stockName = item.querySelector('.stock-name').textContent.toLowerCase();
+                                const companyName = item.querySelector('.stock-sector').textContent.toLowerCase();
+                                const changeElement = item.querySelector('.stock-change');
+                                const changeText = changeElement ? changeElement.textContent : '';
+
+                                // Check if item matches sector filter
+                                const matchesSector = !activeSector || sectorValue === activeSector;
+
+                                // Check if item matches market filter
+                                let matchesMarket = true;
+                                if (activeMarket === 'gainers') {
+                                    matchesMarket = changeText.includes('+');
+                                } else if (activeMarket === 'losers') {
+                                    matchesMarket = changeText.includes('-');
+                                }
+
+                                // Check if item matches search filter
+                                const matchesSearch = searchTerm === '' ||
+                                                    stockName.includes(searchTerm) ||
+                                                    companyName.includes(searchTerm);
+
+                                // Show or hide item based on filters
+                                if (matchesSector && matchesMarket && matchesSearch) {
+                                    item.style.display = 'flex';
+                                } else {
+                                    item.style.display = 'none';
+                                }
+                            });
+                        }
+                    });
+                });
+                
+        function increment(id) {
+            const input = document.getElementById(id);
+            input.stepUp();
+        }
+        
+        function decrement(id) {
+            const input = document.getElementById(id);
+            if (input.value > 1) {
+                input.stepDown();
+            }
+        }
+    </script>
+}
+
+<style>
+    /* Custom styles for wider modal and chart */
+    .chart-container {
+        position: relative;
+        height: 200px;
+        width: 100%;
+    }
+    
+    .chart-wide-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+    }
+    
+    /* Make the stocks page scrollable with invisible scrollbar */
+    html, body {
+        height: 100%;
+    }
+    
+    .stocks-container {
+        overflow-y: auto;
+        max-height: calc(100vh - 60px);
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+    }
+    
+    /* Hide scrollbar for Chrome, Safari and Opera */
+    .stocks-container::-webkit-scrollbar {
+        display: none;
+    }
+    
+    /* Hide scrollbar for all elements */
+    ::-webkit-scrollbar {
+        width: 0px;
+        background: transparent;
+    }
+    
+    * {
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
+    }
+    
+    /* Remove spinner buttons from number input */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+    }
+    
+    input[type=number] {
+        -moz-appearance: textfield;
+        text-align: center;
+    }
+    
+    /* Enhanced search bar styling */
+    .search-highlight {
+        transition: all 0.3s ease;
+    }
+    
+    .search-highlight:focus {
+        box-shadow: 0 0 15px rgba(124, 58, 237, 0.5) !important;
+        border-color: rgba(124, 58, 237, 0.8) !important;
+    }
+    
+    /* Enhanced filter styling */
+    .form-check-input {
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+        transition: all 0.2s ease;
+    }
+    
+    .form-check-input:checked {
+        background-color: #7c3aed;
+        border-color: #7c3aed;
+        transform: scale(1.1);
+        box-shadow: 0 0 8px rgba(124, 58, 237, 0.5);
+    }
+    
+    .form-check-label {
+        cursor: pointer;
+        padding-left: 4px;
+        user-select: none;
+        transition: color 0.2s ease;
+    }
+    
+    .form-check-input:checked + .form-check-label {
+        color: #a78bfa !important;
+        font-weight: 500;
+    }
+    
+    .filter-card {
+        transition: all 0.3s ease;
+        border: 1px solid transparent;
+    }
+    
+    .filter-card:hover {
+        border-color: rgba(124, 58, 237, 0.3);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .filter-card.has-active-filters {
+        border-color: rgba(124, 58, 237, 0.5);
+        box-shadow: 0 0 15px rgba(124, 58, 237, 0.3);
+    }
+    
+    .filter-header {
+        background: linear-gradient(90deg, #222531, #2a2d3a) !important;
+        border-bottom: 1px solid rgba(124, 58, 237, 0.2) !important;
+    }
+    
+    /* Active filter indicator */
+    .filter-active {
+        position: relative;
+    }
+    
+    .filter-active::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        right: -10px;
+        transform: translateY(-50%);
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: #7c3aed;
+        animation: pulse-purple 1.5s infinite;
+    }
+    
+    @@keyframes pulse-purple {
+        0% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0.4); }
+        70% { box-shadow: 0 0 0 6px rgba(124, 58, 237, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(124, 58, 237, 0); }
+    }
+    
+    /* Sector badge styles */
+    .stock-sector-badge {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    
+    .sector-automotive {
+        background-color: #ef4444;
+        color: white;
+    }
+    
+    .sector-technology {
+        background-color: #3b82f6;
+        color: white;
+    }
+    
+    .sector-e-commerce {
+        background-color: #eab308;
+        color: black;
+    }
+    
+    .sector-financial-services {
+        background-color: #10b981;
+        color: white;
+    }
+    
+    .sector-conglomerate {
+        background-color: #8b5cf6;
+        color: white;
+    }
+    
+    /* Pulse animation for price updates */
+    @@keyframes pulse-green {
+        0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(74, 222, 128, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+    }
+    
+    @@keyframes pulse-red {
+        0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    
+    .pulse-green {
+        animation: pulse-green 1s ease-out;
+        border-radius: 4px;
+        padding: 2px 4px;
+    }
+    
+    .pulse-red {
+        animation: pulse-red 1s ease-out;
+        border-radius: 4px;
+        padding: 2px 4px;
+    }
+    
+    /* Make sure white text is visible during pulse */
+    .text-white.pulse-green, .text-white.pulse-red {
+        color: #ffffff !important;
+    }
+    
+    /* Filter styles */
+    .sector-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        font-weight: bold;
+        font-size: 12px;
+        color: white;
+    }
+    
+    .sector-badge-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 11px;
+        color: white;
+    }
+    .filter-option {
+        transition: all 0.2s ease;
+        padding: 8px 12px;
+        border-radius: 8px;
+        margin-bottom: 10px !important;
+    }
+    
+    .filter-option:hover {
+        background-color: rgba(124, 58, 237, 0.1);
+        transform: translateX(3px);
+    }
+    
+    .filter-option .form-check-input:checked ~ .form-check-label {
+        color: #7c3aed !important;
+        font-weight: 600;
+    }
+    
+    .filter-option .form-check-input {
+        border-color: rgba(124, 58, 237, 0.5);
+    }
+    
+    .filter-option .form-check-input:checked {
+        background-color: #7c3aed;
+        border-color: #7c3aed;
+    }
+    
+    .sector-badge {
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+    }
+    
+    .bg-purple {
+        background-color: #8b5cf6;
+        color: white;
+    }
+    
+    .btn-gradient:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+    
+    .btn-outline-light:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+    
+    @@media (min-width: 992px) {
+        .extra-wide-modal {
+            max-width: 1600px !important;
+            width: 95% !important;
+        }
+    }
+</style>
+
+<div class="container py-5 stocks-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 id="stocksTitle" class="text-white fw-bold mb-0">All Stocks</h3>
+        <div class="input-group" style="max-width: 300px;">
+            <span class="input-group-text" style="background: linear-gradient(90deg, rgba(124, 58, 237, 0.2), rgba(236, 72, 153, 0.2)); border: 1px solid rgba(124, 58, 237, 0.3);">
+                <i class="bi bi-search text-white"></i>
+            </span>
+            <input type="text" id="stockSearch" class="form-control search-highlight" style="background-color: rgba(42, 45, 58, 0.8); color: white; border: 1px solid rgba(124, 58, 237, 0.3); box-shadow: 0 0 10px rgba(124, 58, 237, 0.3);" placeholder="Search stocks...">
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Sidebar Filters -->
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm border-0 filter-card" style="background-color: #2a2d3a; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) !important;">
+                <div class="card-header filter-header" style="background: linear-gradient(90deg, rgba(124, 58, 237, 0.2), rgba(236, 72, 153, 0.2)); border-bottom: 1px solid rgba(124, 58, 237, 0.3);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="text-white mb-0 fw-bold">
+                            <i class="bi bi-funnel-fill me-2" style="color: #7c3aed;"></i> Filters
+                        </h5>
+                    </div>
+                </div>
+                <div class="card-body" style="background-color: rgba(42, 45, 58, 0.95);">
+                    <form id="filterForm" method="get" action="@Url.Action("Stocks", "Home")">
+                        
+                        <div class="mb-4">
+                            <h6 class="text-white mb-3" style="font-weight: 600; color: rgba(255, 255, 255, 0.9) !important; border-bottom: 1px solid rgba(124, 58, 237, 0.2); padding-bottom: 8px;">
+                                <i class="bi bi-graph-up-arrow me-2" style="color: #7c3aed;"></i> Market
+                            </h6>
+                            <div class="form-check mb-2 filter-option">
+                                <input class="form-check-input" type="radio" name="market" id="filterAll" value="" @(string.IsNullOrEmpty(ViewBag.SelectedMarket) ? "checked" : "")>
+                                <label class="form-check-label text-white" for="filterAll">All</label>
+                            </div>
+                            <div class="form-check mb-2 filter-option">
+                                <input class="form-check-input" type="radio" name="market" id="filterTopGainers" value="gainers" @(ViewBag.SelectedMarket == "gainers" ? "checked" : "")>
+                                <label class="form-check-label text-white" for="filterTopGainers">
+                                    <span class="badge bg-success me-1"><i class="bi bi-arrow-up"></i></span> Top Gainers
+                                </label>
+                            </div>
+                            <div class="form-check mb-2 filter-option">
+                                <input class="form-check-input" type="radio" name="market" id="filterTopLosers" value="losers" @(ViewBag.SelectedMarket == "losers" ? "checked" : "")>
+                                <label class="form-check-label text-white" for="filterTopLosers">
+                                    <span class="badge bg-danger me-1"><i class="bi bi-arrow-down"></i></span> Top Losers
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h6 class="text-white mb-3" style="font-weight: 600; color: rgba(255, 255, 255, 0.9) !important; border-bottom: 1px solid rgba(124, 58, 237, 0.2); padding-bottom: 8px;">
+                                <i class="bi bi-building me-2" style="color: #7c3aed;"></i> Sector
+                            </h6>
+                            <div class="form-group">
+                                <div class="position-relative">
+                                    <select class="form-select sector-dropdown" id="sectorDropdown" name="sector" style="background-color: rgba(42, 45, 58, 0.8); color: white; border: 1px solid rgba(124, 58, 237, 0.3); box-shadow: 0 0 10px rgba(124, 58, 237, 0.3); padding-right: 2.5rem; cursor: pointer;">
+                                        @if (string.IsNullOrEmpty(ViewBag.SelectedSector))
+                                        {
+                                            <option value="" selected>All Sectors</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="">All Sectors</option>
+                                        }
+                                        
+                                        @foreach (var sector in ViewBag.Sectors)
+                                        {
+                                            if (ViewBag.SelectedSector == sector)
+                                            {
+                                                <option value="@sector" selected>@sector</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="@sector">@sector</option>
+                                            }
+                                        }
+                                    </select>
+                                    <div class="position-absolute" style="top: 50%; right: 10px; transform: translateY(-50%); pointer-events: none;">
+                                        <i class="bi bi-chevron-down text-purple" style="color: #7c3aed;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-gradient mb-2" style="background: linear-gradient(90deg, #7c3aed, #ec4899); border: none; font-weight: 600; padding: 10px;">
+                                <i class="bi bi-filter me-2"></i> Apply Filters
+                            </button>
+                            <a href="@Url.Action("Stocks", "Home")" class="btn btn-outline-light" style="border: 1px solid rgba(255, 255, 255, 0.2); font-weight: 500;">
+                                <i class="bi bi-x-circle me-2"></i> Clear Filters
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Additional space for filters if needed -->
+            <div class="mt-4"></div>
+        </div>
+
+        <!-- Stock List -->
+        <div class="col-lg-9">
+            <div class="card shadow-sm border-0" style="background-color: #2a2d3a; border-radius: 12px; overflow: hidden;">
+                <div class="card-header d-flex flex-wrap justify-content-between align-items-center py-3" style="background-color: #2a2d3a; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                    <span class="text-muted small mb-2 mb-md-0">Showing @(Model.FirstItemIndex)-@(Model.LastItemIndex) of @Model.TotalCount stocks</span>
+                    <nav class="w-100 w-md-auto mt-2 mt-md-0">
+                        <ul class="pagination pagination-sm mb-0 flex-wrap justify-content-center justify-content-md-end">
+                            <li class="page-item @(Model.HasPreviousPage ? "" : "disabled")"><a class="page-link" href="@Url.Action("Stocks", "Home", new { page = Model.PageIndex - 1, sector = ViewBag.SelectedSector, market = ViewBag.SelectedMarket })">Previous</a></li>
+                            
+                            @if (Model.ShowFirstPage)
+                            {
+                                <li class="page-item"><a class="page-link" href="@Url.Action("Stocks", "Home", new { page = 1, sector = ViewBag.SelectedSector, market = ViewBag.SelectedMarket })">1</a></li>
+                                @if (Model.GetVisiblePageNumbers().First() > 2)
+                                {
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                }
+                            }
+                            
+                            @foreach (var p in Model.GetVisiblePageNumbers())
+                            {
+                                <li class="page-item @(p == Model.PageIndex ? "active" : "")"><a class="page-link" href="@Url.Action("Stocks", "Home", new { page = p, sector = ViewBag.SelectedSector, market = ViewBag.SelectedMarket })">@p</a></li>
+                            }
+                            
+                            @if (Model.ShowLastPage)
+                            {
+                                @if (Model.GetVisiblePageNumbers().Last() < Model.TotalPages - 1)
+                                {
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                }
+                                <li class="page-item"><a class="page-link" href="@Url.Action("Stocks", "Home", new { page = Model.TotalPages, sector = ViewBag.SelectedSector, market = ViewBag.SelectedMarket })">@Model.TotalPages</a></li>
+                            }
+                            
+                            <li class="page-item @(Model.HasNextPage ? "" : "disabled")"><a class="page-link" href="@Url.Action("Stocks", "Home", new { page = Model.PageIndex + 1, sector = ViewBag.SelectedSector, market = ViewBag.SelectedMarket })">Next</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="card-body p-3">
+                    <div class="list-group list-group-flush" style="row-gap: 10px; overflow-y: visible;">
+                        @{
+                            // Use the pagination info from the model
+                            int currentPage = Model.PageIndex;
+                            int totalPages = Model.TotalPages;
+                            int startIndex = 0; // Starting from the first item in the paginated list
+                            int endIndex = Model.Count;
+                            
+                            // Loop through the items in the current page
+                            for (int i = 0; i < Model.Count; i++)
+                            {
+                                var stock = Model[i];
+                                var modalId = $"chartModal{i+1}";
+                                var chartId = $"chart{i+1}";
+                                var qtyId = $"qty{i+1}";
+                                <div class="list-group-item stock-item border-0 border-bottom py-3" 
+                                      style="background-color: #2a2d3a; border-color: rgba(255,255,255,0.1) !important; cursor: pointer; margin-bottom: 8px; width: 100%;"
+                                      data-bs-toggle="modal" data-bs-target="#@modalId" data-symbol="@stock.Symbol">
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap flex-md-nowrap">
+                                        <div class="d-flex align-items-center">
+                                            <div class="symbol me-4" style="width: 48px; height: 48px; background-color: @stock.Color; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                                                <span class="@(stock.Color == "#4ade80" || stock.Color == "#eab308" ? "text-dark" : "text-white") fw-bold" style="font-size: 1.1rem;">@stock.Symbol.Substring(0, 1)</span>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-1 text-white stock-name" style="font-size: 1.1rem;">@stock.Symbol</h6>
+                                                <div class="d-flex align-items-center">
+                                                    <span class="text-muted small stock-sector">@stock.Name</span>
+                                                    <span class="sector-badge-pill ms-2 stock-sector-badge" style="background-color: @stock.Color;">@stock.Sector</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <div class="text-end me-4 d-none d-md-block">
+                                                <div class="d-flex align-items-center justify-content-end mb-1">
+                                                    <span class="text-muted small me-2">1h:</span>
+                                                    <span class="hour-1 @stock.Hour1Class">@stock.Hour1</span>
+                                                </div>
+                                                <div class="d-flex align-items-center justify-content-end mb-1">
+                                                    <span class="text-muted small me-2">24h:</span>
+                                                    <span class="hour-24 @stock.Hour24Class">@stock.Hour24</span>
+                                                </div>
+                                                <div class="d-flex align-items-center justify-content-end">
+                                                    <span class="text-muted small me-2">7d:</span>
+                                                    <span class="days-7 @stock.Days7Class">@stock.Days7</span>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex flex-column align-items-end ms-auto">
+                                                <div class="fw-bold text-white mb-2 stock-price" style="font-size: 1.1rem;">@stock.Price</div>
+                                                <div class="stock-change @stock.ChangeClass fw-medium">@stock.Change</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Modal -->
+                                <div class="modal fade" id="@modalId" tabindex="-1" aria-hidden="true" data-symbol="@stock.Symbol">
+                                    <div class="modal-dialog modal-fullscreen-md-down extra-wide-modal modal-dialog-centered">
+                                        <div class="modal-content border-0" style="background-color: #1a1a24;">
+                                            <div class="modal-header border-0 py-4 px-5">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="symbol me-3" style="width: 42px; height: 42px; background-color: @stock.Color; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                                                        <span class="@(stock.Color == "#4ade80" || stock.Color == "#eab308" ? "text-dark" : "text-white") fw-bold">@stock.Symbol.Substring(0, 1)</span>
+                                                    </div>
+                                                    <div>
+                                                        <h5 class="modal-title text-white mb-0">@stock.Symbol <span class="modal-title-price" data-price-display>@stock.Price</span></h5>
+                                                        <div class="d-flex align-items-center">
+                                                            <span class="text-muted small">@stock.Name</span>
+                                                            <span class="sector-badge-pill ms-2" style="background-color: @stock.Color;">@stock.Sector</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body p-0">
+                                                <div class="row mx-0 mb-4 px-5 pt-3">
+                                                    <div class="col-md-6">
+                                                        <div class="d-flex align-items-baseline">
+                                                            <h2 class="text-white mb-0 modal-price" id="modalPrice@(i+1)" data-price-display>@stock.Price</h2>
+                                                            <span class="modal-change @stock.ChangeClass ms-3" id="modalChange@(i+1)">@stock.Change</span>
+                                                            <!-- Hidden element for tradeStock function -->
+                                                            <span id="currentPrice_@stock.Id" style="display: none;">@stock.Price.Replace("$", "")</span>
+                                                        </div>
+                                                        <div class="d-flex gap-3 mt-2">
+                                                            <span class="hour-1 @stock.Hour1Class small">1h: @stock.Hour1</span>
+                                                            <span class="hour-24 @stock.Hour24Class small">24h: @stock.Hour24</span>
+                                                            <span class="days-7 @stock.Days7Class small">7d: @stock.Days7</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                                                        
+                                                        <div class="mt-2 text-muted small">
+                                                            @stock.Name (@stock.Symbol) - @stock.Sector
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="chart-wide-container px-5">
+                                                    <canvas id="@chartId"></canvas>
+                                                </div>
+                                                
+                                                <div class="row mt-4 mx-0 px-5 pb-4">
+                                                    <div class="col-12">
+                                                        <div class="card bg-dark border-0 mb-3">
+                                                            <div class="card-body p-4">
+                                                                <div class="row gx-4">
+                                                                    <!-- Product Info -->
+                                                                    <div class="col-md-8">
+                                                                        <h6 class="text-white mb-3">About @stock.Name (@stock.Symbol)</h6>
+                                                                        <p class="text-muted small mb-2" style="text-align: justify;">
+                                                                            @{
+                                                                                string companyDescription = "";
+                                                                                
+                                                                                if (stock.Symbol == "TSLA") {
+                                                                                    companyDescription = "Tesla, Inc. designs, develops, manufactures, and sells electric vehicles, energy generation and storage systems. The company operates through two segments: Automotive and Energy Generation and Storage. The Automotive segment offers electric vehicles, as well as sells automotive regulatory credits. The Energy Generation and Storage segment provides design, manufacture, installation, sale, and leasing of solar energy generation and energy storage products, and related services to residential, commercial, and industrial customers and utilities.";
+                                                                                } else if (stock.Symbol == "AAPL") {
+                                                                                    companyDescription = "Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide. The company offers iPhone, iPad, Mac, Apple Watch, and Apple TV. It also provides Apple Pay, Apple Music, Apple TV+, Apple Arcade, and other services. Apple sells its products through its retail and online stores, and through third-party retailers. The company was founded in 1976 and is headquartered in Cupertino, California.";
+                                                                                } else if (stock.Symbol == "MSFT") {
+                                                                                    companyDescription = "Microsoft Corporation develops, licenses, and supports software, services, devices, and solutions worldwide. The company operates in three segments: Productivity and Business Processes, Intelligent Cloud, and More Personal Computing. The company produces the Windows operating system, Office productivity suite, and Azure cloud services. Microsoft was founded in 1975 and is headquartered in Redmond, Washington.";
+                                                                                } else if (stock.Symbol == "NFLX") {
+                                                                                    companyDescription = "Netflix, Inc. provides entertainment services. It offers TV series, documentaries, feature films, and mobile games across various genres and languages. The company provides members the ability to receive streaming content through a host of internet-connected devices, including TVs, digital video players, television set-top boxes, and mobile devices. Netflix has approximately 222 million paid memberships in 190 countries.";
+                                                                                } else if (stock.Symbol == "AMZN") {
+                                                                                    companyDescription = "Amazon.com, Inc. engages in the retail sale of consumer products and subscriptions through online and physical stores. It operates through the North America, International, and Amazon Web Services (AWS) segments. The company sells merchandise and content purchased for resale from third-party sellers. Amazon also manufactures and sells electronic devices and offers programs that enable sellers to sell their products on its websites, as well as its stores.";
+                                                                                } else if (stock.Symbol == "GOOGL") {
+                                                                                    companyDescription = "Alphabet Inc. provides various products and platforms in the United States, Europe, the Middle East, Africa, the Asia-Pacific, Canada, and Latin America. It operates through Google Services, Google Cloud, and Other Bets segments. The Google Services segment offers products and services, including ads, Android, Chrome, hardware, Gmail, Google Drive, Google Maps, Google Photos, Google Play, Search, and YouTube.";
+                                                                                } else if (stock.Symbol == "META") {
+                                                                                    companyDescription = "Meta Platforms, Inc. develops products that enable people to connect and share with friends and family through mobile devices, personal computers, virtual reality headsets, and wearables worldwide. It operates in two segments, Family of Apps and Reality Labs. The Family of Apps segment offers Facebook, Instagram, Messenger, and WhatsApp. The Reality Labs segment provides augmented and virtual reality related products.";
+                                                                                } else if (stock.Symbol == "NVDA") {
+                                                                                    companyDescription = "NVIDIA Corporation provides graphics, computing, and networking solutions. The company operates through two segments, Graphics and Compute & Networking. Its products are used in gaming, professional visualization, datacenter, and automotive markets. NVIDIA was founded in 1993 and is headquartered in Santa Clara, California.";
+                                                                                } else if (stock.Symbol == "JPM") {
+                                                                                    companyDescription = "JPMorgan Chase & Co. operates as a financial services company worldwide. It operates through four segments: Consumer & Community Banking, Corporate & Investment Bank, Commercial Banking, and Asset & Wealth Management. The company offers deposit, investment and lending products, cash management, and payments and services to consumers and small businesses; mortgage origination and servicing activities; credit cards and auto loans.";
+                                                                                } else if (stock.Symbol == "BRK.A") {
+                                                                                    companyDescription = "Berkshire Hathaway Inc. engages in the insurance, freight rail transportation, and utility businesses worldwide. It provides property, casualty, life, accident, and health insurance and reinsurance; and operates railroad systems in North America. The company also generates, transmits, stores, and distributes electricity from natural gas, coal, wind, solar, hydroelectric, nuclear, and geothermal sources.";
+                                                                                }
+                                                                            }
+                                                                            @Html.Raw(companyDescription)
+                                                                        </p>
+                                                                        <p class="text-muted small mb-0" style="text-align: justify;">
+                                                                            The company operates in the @stock.Sector sector and is known for its innovative products and services in this space. It continues to expand its market presence through strategic acquisitions and product development initiatives.
+                                                                        </p>
+                                                                    </div>
+
+
+
+                                                                    <!-- Buy Section -->
+                                                                    <div class="col-md-3">
+                                                                        <h6 class="text-white mb-3">Buy</h6>
+                                                                        <div class="mb-3">
+                                                                            <div class="input-group" style="max-width: 200px;">
+                                                                                <span class="input-group-text bg-dark border-0 text-white">Quantity</span>
+                                                                                <input type="number" id="quantity_@stock.Id" value="1" min="1" class="form-control bg-dark text-white border-0" style="color: white !important;" />
+                                                                                <div class="d-flex flex-column ms-2">
+                                                                                    <button class="btn btn-dark border-0 mb-1" onclick="increment('quantity_@stock.Id')">
+                                                                                        <i class="bi bi-plus-lg"></i>
+                                                                                    </button>
+                                                                                    <button class="btn btn-dark border-0" onclick="decrement('quantity_@stock.Id')">
+                                                                                        <i class="bi bi-dash-lg"></i>
+                                                                                    </button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div class="d-grid gap-2">
+                                                                            <button class="btn btn-success" style="background-color: #4ade80;" onclick="tradeStock('@stock.Symbol', 'buy', '@stock.Id')">
+                                                                                <i class="bi bi-cart-plus me-1"></i> Buy Now
+                                                                            </button>
+                                                                            <button class="btn btn-danger" style="background-color: #ef4444;" onclick="tradeStock('@stock.Symbol', 'sell', '@stock.Id')">
+                                                                                <i class="bi bi-cart-dash me-1"></i> Sell
+                                                                            </button>
+                                                                            <div id="tradeMessage_@stock.Id" class="mt-2 text-center small"></div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

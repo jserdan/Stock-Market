@@ -1,0 +1,117 @@
+is_global = true
+build_property.TargetFramework = net8.0
+build_property.TargetPlatformMinVersion = 
+build_property.UsingMicrosoftNETSdkWeb = true
+build_property.ProjectTypeGuids = 
+build_property.InvariantGlobalization = 
+build_property.PlatformNeutralAssembly = 
+build_property.EnforceExtendedAnalyzerRules = 
+build_property._SupportedPlatformList = Linux,macOS,Windows
+build_property.RootNamespace = danserdan
+build_property.RootNamespace = danserdan
+build_property.ProjectDir = C:\Users\ASUS\source\repos\tradess\with security, without front and total funds transac\danserdan\danserdan\danserdan4\danserdan\
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.RazorLangVersion = 8.0
+build_property.SupportLocalizedComponentNames = 
+build_property.GenerateRazorMetadataSourceChecksumAttributes = 
+build_property.MSBuildProjectDirectory = C:\Users\ASUS\source\repos\tradess\with security, without front and total funds transac\danserdan\danserdan\danserdan4\danserdan
+build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 8.0
+build_property.EnableCodeStyleSeverity = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Account/ForgotPassword.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxGb3Jnb3RQYXNzd29yZC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Account/ForgotPasswordConfirmation.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxGb3Jnb3RQYXNzd29yZENvbmZpcm1hdGlvbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Account/Login.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxMb2dpbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Account/Profile.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxQcm9maWxlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Account/Signup.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxTaWdudXAuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Admin/AllStocks.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQWxsU3RvY2tzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Admin/AllTransactions.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQWxsVHJhbnNhY3Rpb25zLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Admin/AllUsers.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cQWxsVXNlcnMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Admin/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWRtaW5cSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Home/Aboutus.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxBYm91dHVzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Home/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Home/Stocks.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxTdG9ja3MuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Home/TheTeam.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxUaGVUZWFtLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Payment/AddFunds.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF5bWVudFxBZGRGdW5kcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Payment/CashOut.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF5bWVudFxDYXNoT3V0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Shared/Error.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Shared/_AuthCardHeader.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9BdXRoQ2FyZEhlYWRlci5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Shared/_LoginPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9Mb2dpblBhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Shared/_SignupPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9TaWdudXBQYXJ0aWFsLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Shared/_TradeModal.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9UcmFkZU1vZGFsLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Shared/_ValidationScriptsPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/_ViewImports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/_ViewStart.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/ASUS/source/repos/tradess/with security\, without front and total funds transac/danserdan/danserdan/danserdan4/danserdan/Views/Shared/_Layout.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = b-obm2le0bmd

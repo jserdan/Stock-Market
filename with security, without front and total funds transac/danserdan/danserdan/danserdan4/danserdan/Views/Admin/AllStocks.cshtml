@@ -1,0 +1,380 @@
+@model List<danserdan.Models.Stocks>
+
+@{
+    ViewData["Title"] = "All Stocks";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-white">All Stocks</h1>
+        <a href="@Url.Action("Index", "Admin")" class="btn btn-outline-light" style="border-radius: 6px;">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0" style="background-color: #2a2d3a; border-radius: 12px;">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <input type="text" id="stockSearch" class="form-control search-control" placeholder="Search stocks..." style="background-color: #1a1a24; border: 1px solid #3f3f4e; color: white; border-radius: 6px;">
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="text-white me-3" id="stockCounter">Showing <span id="currentShowing">1-10</span> of <span id="totalStocks">@ViewBag.TotalStocksCount</span> stocks</div>
+                    <div class="pagination-controls d-flex align-items-center">
+                        <button id="prevPageBtn" class="btn btn-sm" style="background-color: #7c3aed; color: white; border-radius: 4px; margin-right: 5px;">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <div id="pageNumbers" class="d-inline-flex"></div>
+                        <button id="nextPageBtn" class="btn btn-sm" style="background-color: #7c3aed; color: white; border-radius: 4px; margin-left: 5px;">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                        <button id="showAllBtn" class="btn btn-sm ms-3" style="background-color: #7c3aed; color: white; border-radius: 4px;">
+                            Show All
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-dark table-hover" style="background-color: #2a2d3a; border-radius: 8px; overflow: hidden;">
+                    <thead>
+                        <tr style="border-bottom: 1px solid #3f3f4e;">
+                            <th style="padding: 15px 10px; font-weight: 600; color: #e5e7eb;">Symbol</th>
+                            <th style="padding: 15px 10px; font-weight: 600; color: #e5e7eb;">Company Name</th>
+                            <th style="padding: 15px 10px; font-weight: 600; color: #e5e7eb;">Current Price</th>
+                            <th style="padding: 15px 10px; font-weight: 600; color: #e5e7eb;">Open Price</th>
+                            <th style="padding: 15px 10px; font-weight: 600; color: #e5e7eb;">Last Updated</th>
+                            <th style="padding: 15px 10px; font-weight: 600; color: #e5e7eb;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stocksTableBody">
+                        @foreach (var stock in Model)
+                        {
+                            <tr style="border-bottom: 1px solid #3f3f4e;">
+                                <td style="padding: 15px 10px; font-weight: 500;">@stock.symbol</td>
+                                <td style="padding: 15px 10px;">@stock.company_name</td>
+                                <td style="padding: 15px 10px;">
+                                    <span>$@stock.market_price.ToString("F2")</span>
+                                </td>
+                                <td style="padding: 15px 10px;">
+                                    @if (stock.open_price.HasValue)
+                                    {
+                                        <span>$@stock.open_price.Value.ToString("F2")</span>
+                                    }
+                                    else
+                                    {
+                                        <span>N/A</span>
+                                    }
+                                </td>
+                                <td style="padding: 15px 10px;">@stock.last_updated.ToString("MM/dd/yyyy HH:mm")</td>
+                                <td style="padding: 15px 10px;">
+                                    <div class="form-check form-switch">
+                                        <div class="d-flex align-items-center">
+                                            <input class="form-check-input me-2" type="checkbox" id="availabilityToggle_@stock.stock_id" 
+                                                   @(stock.IsAvailable ? "checked" : "") 
+                                                   style="width: 40px; height: 20px;"
+                                                   onchange="toggleStockAvailability(@stock.stock_id, this.checked)">
+                                            <label class="form-check-label" for="availabilityToggle_@stock.stock_id">
+                                                <span id="availabilityStatus_@stock.stock_id">@(stock.IsAvailable ? "Available" : "Unavailable")</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notifications -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <strong class="me-auto">Success</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" style="background-color: #2a2d3a; color: white;">
+            <span id="toastMessage"></span>
+        </div>
+    </div>
+</div>
+
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11; margin-bottom: 80px;">
+    <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <strong class="me-auto">Error</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" style="background-color: #2a2d3a; color: white;">
+            <span id="errorToastMessage"></span>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/admin.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Pagination for stocks table
+            const itemsPerPage = 10; // Set to exactly 10 stocks per page
+            const stockRows = document.querySelectorAll('#stocksTableBody tr');
+            const totalStocksCount = @ViewBag.TotalStocksCount; // Total number of stocks in the system
+            const totalPages = Math.ceil(totalStocksCount / itemsPerPage);
+            let currentPage = 1;
+            const chunkSize = 3; // Show 3 page numbers at a time
+            let showingAll = false; // Track if showing all stocks
+            
+            const pageNumbersContainer = document.getElementById('pageNumbers');
+            const prevPageBtn = document.getElementById('prevPageBtn');
+            const nextPageBtn = document.getElementById('nextPageBtn');
+            const searchInput = document.getElementById('stockSearch');
+            
+            function getVisiblePageNumbers(current, total, chunk) {
+                // Calculate which chunk the current page belongs to
+                const chunkIndex = Math.ceil(current / chunk) - 1;
+                
+                // Calculate the start and end of the current chunk
+                let start = chunkIndex * chunk + 1;
+                let end = Math.min(start + chunk - 1, total);
+                
+                return Array.from({length: end - start + 1}, (_, i) => start + i);
+            }
+            
+            function renderPagination() {
+                pageNumbersContainer.innerHTML = '';
+                
+                const visiblePages = getVisiblePageNumbers(currentPage, totalPages, chunkSize);
+                const currentChunk = Math.ceil(currentPage / chunkSize);
+                const totalChunks = Math.ceil(totalPages / chunkSize);
+                
+                // Add first chunk button if we're not on the first chunk
+                if (currentChunk > 1) {
+                    // Add first page button
+                    const firstBtn = document.createElement('button');
+                    firstBtn.className = 'btn btn-sm page-btn';
+                    firstBtn.style.backgroundColor = '#7c3aed';
+                    firstBtn.style.color = 'white';
+                    firstBtn.style.borderRadius = '4px';
+                    firstBtn.style.margin = '0 2px';
+                    firstBtn.style.minWidth = '30px';
+                    firstBtn.textContent = '1';
+                    firstBtn.addEventListener('click', () => showPage(1));
+                    pageNumbersContainer.appendChild(firstBtn);
+                    
+                    // Add ellipsis if we're not on the second chunk
+                    if (currentChunk > 2) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.className = 'page-ellipsis';
+                        ellipsis.style.margin = '0 5px';
+                        ellipsis.style.color = 'white';
+                        ellipsis.textContent = '...';
+                        pageNumbersContainer.appendChild(ellipsis);
+                    }
+                }
+                
+                // Add visible page buttons for the current chunk
+                visiblePages.forEach(page => {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.className = 'btn btn-sm page-btn';
+                    pageBtn.style.margin = '0 2px';
+                    pageBtn.style.minWidth = '30px';
+                    pageBtn.style.borderRadius = '4px';
+                    
+                    if (page === currentPage) {
+                        pageBtn.style.backgroundColor = '#7c3aed';
+                        pageBtn.style.color = 'white';
+                        pageBtn.style.fontWeight = 'bold';
+                    } else {
+                        pageBtn.style.backgroundColor = '#4b5563';
+                        pageBtn.style.color = 'white';
+                    }
+                    
+                    pageBtn.textContent = page;
+                    pageBtn.addEventListener('click', () => showPage(page));
+                    pageNumbersContainer.appendChild(pageBtn);
+                });
+                
+                // Add last page button if we're not on the last chunk
+                if (currentChunk < totalChunks) {
+                    // Add ellipsis if we're not on the second-to-last chunk
+                    if (currentChunk < totalChunks - 1) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.className = 'page-ellipsis';
+                        ellipsis.style.margin = '0 5px';
+                        ellipsis.style.color = 'white';
+                        ellipsis.textContent = '...';
+                        pageNumbersContainer.appendChild(ellipsis);
+                    }
+                    
+                    // Add last page button
+                    const lastBtn = document.createElement('button');
+                    lastBtn.className = 'btn btn-sm page-btn';
+                    lastBtn.style.backgroundColor = '#7c3aed';
+                    lastBtn.style.color = 'white';
+                    lastBtn.style.borderRadius = '4px';
+                    lastBtn.style.margin = '0 2px';
+                    lastBtn.style.minWidth = '30px';
+                    lastBtn.textContent = totalPages;
+                    lastBtn.addEventListener('click', () => showPage(totalPages));
+                    pageNumbersContainer.appendChild(lastBtn);
+                }
+                
+                // Update previous and next buttons
+                prevPageBtn.disabled = currentPage === 1;
+                nextPageBtn.disabled = currentPage === totalPages;
+                
+                if (prevPageBtn.disabled) {
+                    prevPageBtn.style.opacity = '0.5';
+                } else {
+                    prevPageBtn.style.opacity = '1';
+                    // Make previous button go to previous chunk if at start of chunk
+                    if ((currentPage - 1) % chunkSize === 0) {
+                        prevPageBtn.onclick = () => showPage(currentPage - 1);
+                    } else {
+                        prevPageBtn.onclick = () => showPage(Math.max(1, Math.floor((currentPage - 1) / chunkSize) * chunkSize));
+                    }
+                }
+                
+                if (nextPageBtn.disabled) {
+                    nextPageBtn.style.opacity = '0.5';
+                } else {
+                    nextPageBtn.style.opacity = '1';
+                    // Make next button go to next chunk if at end of chunk
+                    if (currentPage % chunkSize === 0) {
+                        nextPageBtn.onclick = () => showPage(currentPage + 1);
+                    } else {
+                        nextPageBtn.onclick = () => showPage(Math.min(totalPages, Math.ceil(currentPage / chunkSize) * chunkSize + 1));
+                    }
+                }
+            }
+            
+            function showPage(page) {
+                if (showingAll) {
+                    // If we're showing all and user clicks a page number, switch back to pagination
+                    showingAll = false;
+                    document.getElementById('showAllBtn').textContent = 'Show All';
+                }
+                
+                const startIndex = (page - 1) * itemsPerPage;
+                const endIndex = Math.min(startIndex + itemsPerPage, stockRows.length);
+                
+                stockRows.forEach((row, index) => {
+                    if (index >= startIndex && index < endIndex) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Update the counter - always show the correct range based on the page
+                const start = (page - 1) * itemsPerPage + 1;
+                const end = Math.min(page * itemsPerPage, totalStocksCount);
+                document.getElementById('currentShowing').textContent = `${start}-${end}`;
+                document.getElementById('totalStocks').textContent = totalStocksCount;
+                
+                currentPage = page;
+                renderPagination();
+            }
+            
+            function showAllStocks() {
+                showingAll = !showingAll;
+                
+                if (showingAll) {
+                    // Show all stocks
+                    stockRows.forEach(row => {
+                        row.style.display = '';
+                    });
+                    document.getElementById('showAllBtn').textContent = 'Show Paged';
+                    prevPageBtn.disabled = true;
+                    nextPageBtn.disabled = true;
+                    pageNumbersContainer.innerHTML = '';
+                    
+                    // Update the counter to show all stocks (total 35)
+                    document.getElementById('currentShowing').textContent = `1-${totalStocksCount}`;
+                    document.getElementById('totalStocks').textContent = totalStocksCount;
+                } else {
+                    // Go back to pagination
+                    document.getElementById('showAllBtn').textContent = 'Show All';
+                    showPage(currentPage);
+                }
+            }
+            
+            showPage(currentPage);
+            
+            // Previous page button - will be assigned in renderPagination
+            prevPageBtn.addEventListener('click', function() {
+                // The actual navigation logic is handled in renderPagination
+                // This is just a fallback in case the onclick handler isn't set
+                if (currentPage > 1) {
+                    currentPage--;
+                    showPage(currentPage);
+                }
+            });
+            
+            // Next page button - will be assigned in renderPagination
+            nextPageBtn.addEventListener('click', function() {
+                // The actual navigation logic is handled in renderPagination
+                // This is just a fallback in case the onclick handler isn't set
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    showPage(currentPage);
+                }
+            });
+            
+            // Show All button
+            document.getElementById('showAllBtn').addEventListener('click', showAllStocks);
+            
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                let visibleRowCount = 0;
+                
+                // If search is empty, reset to normal pagination view
+                if (searchTerm === '') {
+                    stockRows.forEach(row => {
+                        row.classList.add('search-match');
+                    });
+                    showPage(1);
+                    return;
+                }
+                
+                stockRows.forEach(row => {
+                    const symbol = row.querySelector('td:first-child').textContent.toLowerCase();
+                    const companyName = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    
+                    if (symbol.includes(searchTerm) || companyName.includes(searchTerm)) {
+                        row.classList.add('search-match');
+                        visibleRowCount++;
+                    } else {
+                        row.classList.remove('search-match');
+                    }
+                });
+                
+                // Reset to first page and show only matching rows
+                currentPage = 1;
+                const matchingRows = document.querySelectorAll('#stocksTableBody tr.search-match');
+                
+                stockRows.forEach(row => {
+                    if (row.classList.contains('search-match')) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                // Update the counter to show search results while maintaining total count
+                document.getElementById('currentShowing').textContent = `1-${matchingRows.length}`;
+                document.getElementById('totalStocks').textContent = totalStocksCount;
+                
+                // Hide pagination during search
+                prevPageBtn.disabled = true;
+                nextPageBtn.disabled = true;
+                pageNumbersContainer.innerHTML = '';
+                document.getElementById('showAllBtn').textContent = 'Reset Search';
+                showingAll = true; // Set to true so clicking 'Reset Search' will reset properly
+            });
+        });
+    </script>
+}

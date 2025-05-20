@@ -1,0 +1,32 @@
+@model string
+
+<div class="container">
+    <h2>Sign Up</h2>
+    <form method="post" asp-action="Signup">
+        <div>
+            <label for="firstName">First Name:</label>
+            <input type="text" name="firstName" required maxlength="50" />
+        </div>
+        <div>
+            <label for="lastName">Last Name:</label>
+            <input type="text" name="lastName" required maxlength="50" />
+        </div>
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" name="username" required minlength="3" maxlength="50" />
+        </div>
+        <div>
+            <label for="email">Email:</label>
+            <input type="email" name="email" required />
+        </div>
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" name="password" required minlength="6" />
+        </div>
+        <button type="submit">Sign Up</button>
+        @if (ViewBag.Error != null)
+        {
+            <p style="color:red;">@ViewBag.Error</p>
+        }
+    </form>
+</div>

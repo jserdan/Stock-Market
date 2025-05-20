@@ -1,0 +1,259 @@
+@model danserdan.Models.AdminDashboardViewModel
+@using danserdan.Services
+@inject CurrencyService _currencyService
+
+@{
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+<div class="container-fluid py-4">
+    <h1 class="mb-4" style="color: #fff;">Dashboard</h1>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); border-radius: 12px;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="text-white mb-0" style="font-weight: 600;">Stocks</h5>
+                        <div class="text-white bg-white bg-opacity-25 p-2 rounded-circle">
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </div>
+                    </div>
+                    <a href="@Url.Action("AllStocks", "Admin")" class="text-decoration-none">
+                        <div class="d-flex align-items-baseline">
+                            <h1 class="text-white mb-0" style="font-size: 2.5rem; font-weight: 700;">@Model.TotalStocks</h1>
+                            <span class="text-white ms-2 opacity-75">total stocks</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2">
+                            <p class="text-white opacity-75 mb-0">View all stocks <i class="bi bi-arrow-right"></i></p>
+                            @if (Model.TotalStocks < 35)
+                            {
+                                <a href="@Url.Action("AllStocks", "Admin")" class="btn btn-sm btn-light opacity-75">Update Stocks</a>
+                            }
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #06b6d4, #0891b2); border-radius: 12px;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="text-white mb-0" style="font-weight: 600;">Sales</h5>
+                        <div class="text-white bg-white bg-opacity-25 p-2 rounded-circle">
+                            <i class="bi bi-credit-card"></i>
+                        </div>
+                    </div>
+                    <a href="@Url.Action("AllTransactions", "Admin")" class="text-decoration-none">
+                        <div class="d-flex align-items-baseline">
+                            <h1 class="text-white mb-0" style="font-size: 2.5rem; font-weight: 700;">@Model.TotalTransactions</h1>
+                            <span class="text-white ms-2 opacity-75">transactions</span>
+                        </div>
+                        <p class="text-white opacity-75 mt-2 mb-0">View all transactions <i class="bi bi-arrow-right"></i></p>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0" style="background: linear-gradient(135deg, #f97316, #ea580c); border-radius: 12px;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="text-white mb-0" style="font-weight: 600;">Users</h5>
+                        <div class="text-white bg-white bg-opacity-25 p-2 rounded-circle">
+                            <i class="bi bi-people"></i>
+                        </div>
+                    </div>
+                    <a href="@Url.Action("AllUsers", "Admin")" class="text-decoration-none">
+                        <div class="d-flex align-items-baseline">
+                            <h1 class="text-white mb-0" style="font-size: 2.5rem; font-weight: 700;">@Model.TotalUsers</h1>
+                            <span class="text-white ms-2 opacity-75">registered</span>
+                        </div>
+                        <p class="text-white opacity-75 mt-2 mb-0">View all users <i class="bi bi-arrow-right"></i></p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm border-0" style="background-color: #2a2d3a; border-radius: 12px;">
+                <div class="card-body">
+                    <h5 class="text-white mb-4">Overview</h5>
+                    <div style="height: 300px;">
+                        <canvas id="revenueChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0" style="background-color: #2a2d3a; border-radius: 12px;">
+                <div class="card-body">
+                    <h5 class="text-white mb-4">Recent Transactions</h5>
+                    <div class="recent-transactions">
+                        @foreach (dynamic transaction in Model.RecentTransactions)
+                        {
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar me-3" style="width: 40px; height: 40px; background-color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                                        <span class="text-white">@transaction.UserName[0]</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-white mb-0">@transaction.UserName</p>
+                                        <small class="text-muted">
+                                            @if (transaction.TransactionType == "buy")
+                                            {
+                                                <span>Bought @transaction.StockSymbol</span>
+                                            }
+                                            else if (transaction.TransactionType == "sell")
+                                            {
+                                                <span>Sold @transaction.StockSymbol</span>
+                                            }
+                                            else if (transaction.TransactionType == "addfunds")
+                                            {
+                                                <span>Added Funds</span>
+                                            }
+                                            else if (transaction.TransactionType == "payout")
+                                            {
+                                                <span>Withdrew Funds</span>
+                                            }
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="@(transaction.TransactionType == "buy" || transaction.TransactionType == "payout" ? "text-danger" : "text-success")">
+                                    @{
+                                        var usdAmount = transaction.Amount;
+                                        var phpAmount = decimal.Round(usdAmount * 56.5m, 2);
+                                        var prefix = transaction.TransactionType == "buy" || transaction.TransactionType == "payout" ? "-" : "+";
+                                        var preferredCurrency = _currencyService.GetUserPreferredCurrency();
+                                    }
+                                    @if (preferredCurrency == "USD")
+                                    {
+                                        <span data-amount-usd="@usdAmount.ToString("F2")" data-amount-php="@phpAmount.ToString("F2")" class="transaction-amount">
+                                            @prefix$@usdAmount.ToString("F2")
+                                        </span>
+                                        <small class="text-muted d-block">@prefix₱@phpAmount.ToString("F2")</small>
+                                    }
+                                    else
+                                    {
+                                        <span data-amount-usd="@usdAmount.ToString("F2")" data-amount-php="@phpAmount.ToString("F2")" class="transaction-amount">
+                                            @prefix₱@phpAmount.ToString("F2")
+                                        </span>
+                                        <small class="text-muted d-block">@prefix$@usdAmount.ToString("F2")</small>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            
+            // Define the correct month order
+            const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            // Get months and data from model (ensuring consistent order)
+            const monthData = @Html.Raw(Json.Serialize(Model.MonthlyData));
+            
+            // Create ordered arrays for the chart
+            const months = monthOrder;
+            let data = months.map(month => monthData[month] || 0);
+            
+            // Exchange rate USD to PHP
+            const exchangeRate = 56.5;
+            
+            // Track current currency
+            let currentCurrency = '@_currencyService.GetUserPreferredCurrency()';
+            
+            // Create the chart with initial data
+            const chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: months,
+                    datasets: [{
+                        label: currentCurrency === 'USD' ? 'Monthly Revenue (USD)' : 'Monthly Revenue (PHP)',
+                        data: data,
+                        backgroundColor: '#ffffff',
+                        borderColor: '#ffffff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#ffffff',
+                                callback: function(value) {
+                                    return currentCurrency === 'USD' ? '$' + value : '₱' + value;
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#ffffff'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let value = context.raw;
+                                    return currentCurrency === 'USD' ? 
+                                        '$' + value.toFixed(2) : 
+                                        '₱' + value.toFixed(2);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Listen for currency change events
+            document.addEventListener('currencyChanged', function(e) {
+                currentCurrency = e.detail.currency;
+                
+                // Convert data based on currency
+                if (currentCurrency === 'USD') {
+                    data = months.map(month => monthData[month] || 0);
+                } else {
+                    data = months.map(month => (monthData[month] || 0) * exchangeRate);
+                }
+                
+                // Update chart label
+                chart.data.datasets[0].label = currentCurrency === 'USD' ? 
+                    'Monthly Revenue (USD)' : 
+                    'Monthly Revenue (PHP)';
+                
+                // Update chart data
+                chart.data.datasets[0].data = data;
+                
+                // Update chart
+                chart.update();
+            });
+        });
+    </script>
+}

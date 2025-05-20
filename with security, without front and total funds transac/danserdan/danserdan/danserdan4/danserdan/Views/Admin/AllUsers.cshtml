@@ -1,0 +1,267 @@
+@model List<danserdan.Models.Users>
+
+@{
+    ViewData["Title"] = "All Users";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>All Users</h1>
+        <a href="@Url.Action("Index", "Admin")" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0" style="background-color: #2a2d3a; border-radius: 12px;">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <input type="text" id="userSearch" class="form-control search-control" placeholder="Search users...">
+                </div>
+                <div class="pagination-controls">
+                    <button id="prevPageBtn" class="btn btn-sm">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <div id="pageNumbers" class="d-inline-flex"></div>
+                    <button id="nextPageBtn" class="btn btn-sm">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Balance</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td>@user.user_id</td>
+                                <td>@user.firstName @user.lastName</td>
+                                <td>@user.username</td>
+                                <td>@user.email</td>
+                                <td>
+                                    @if (user.balance.HasValue)
+                                    {
+                                        <span class="user-balance" data-original-usd="@user.balance.Value.ToString("F2")">$@user.balance.Value.ToString("F2")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                                <td>@user.created_at.ToString("MM/dd/yyyy")</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Currency conversion constants
+            const USD_TO_PHP_RATE = 56.5;
+            let currentCurrency = localStorage.getItem('preferredCurrency') || 'USD';
+            
+            // Initialize currency display
+            updateUserBalances();
+            
+            // Listen for currency changes from the layout
+            document.addEventListener('currencyChanged', function(event) {
+                currentCurrency = event.detail.currency;
+                updateUserBalances();
+            });
+            
+            // Function to update user balances based on currency
+            function updateUserBalances() {
+                const userBalances = document.querySelectorAll('.user-balance');
+                
+                userBalances.forEach(element => {
+                    const usdBalance = parseFloat(element.getAttribute('data-original-usd'));
+                    if (!isNaN(usdBalance)) {
+                        if (currentCurrency === 'PHP') {
+                            // Convert from USD to PHP
+                            const phpBalance = usdBalance * USD_TO_PHP_RATE;
+                            element.textContent = '₱' + phpBalance.toFixed(2);
+                        } else {
+                            // Show in USD
+                            element.textContent = '$' + usdBalance.toFixed(2);
+                        }
+                    }
+                });
+            }
+            // Pagination for users table
+            const itemsPerPage = 10;
+            const userRows = document.querySelectorAll('#usersTableBody tr');
+            const totalPages = Math.ceil(userRows.length / itemsPerPage);
+            let currentPage = 1;
+            const chunkSize = 3; // Number of page buttons to show at once
+            
+            const pageNumbersContainer = document.getElementById('pageNumbers');
+            const prevPageBtn = document.getElementById('prevPageBtn');
+            const nextPageBtn = document.getElementById('nextPageBtn');
+            const searchInput = document.getElementById('userSearch');
+            
+            function getVisiblePageNumbers(current, total, chunk) {
+                const halfChunk = Math.floor(chunk / 2);
+                let start = Math.max(1, current - halfChunk);
+                let end = Math.min(total, start + chunk - 1);
+                
+                // Adjust start if we're near the end
+                if (end - start + 1 < chunk && start > 1) {
+                    start = Math.max(1, end - chunk + 1);
+                }
+                
+                return Array.from({length: end - start + 1}, (_, i) => start + i);
+            }
+            
+            function renderPagination() {
+                pageNumbersContainer.innerHTML = '';
+                
+                const visiblePages = getVisiblePageNumbers(currentPage, totalPages, chunkSize);
+                const showFirstPage = visiblePages[0] > 1;
+                const showLastPage = visiblePages[visiblePages.length - 1] < totalPages;
+                
+                // Add first page button if needed
+                if (showFirstPage) {
+                    const firstBtn = document.createElement('button');
+                    firstBtn.className = 'btn btn-sm page-btn';
+                    firstBtn.textContent = '1';
+                    firstBtn.addEventListener('click', () => showPage(1));
+                    pageNumbersContainer.appendChild(firstBtn);
+                    
+                    // Add ellipsis if there's a gap
+                    if (visiblePages[0] > 2) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.className = 'page-ellipsis';
+                        ellipsis.textContent = '...';
+                        pageNumbersContainer.appendChild(ellipsis);
+                    }
+                }
+                
+                // Add visible page buttons
+                visiblePages.forEach(page => {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.className = 'btn btn-sm page-btn';
+                    if (page === currentPage) {
+                        pageBtn.classList.add('active');
+                    }
+                    pageBtn.textContent = page;
+                    pageBtn.addEventListener('click', () => showPage(page));
+                    pageNumbersContainer.appendChild(pageBtn);
+                });
+                
+                // Add last page button if needed
+                if (showLastPage) {
+                    // Add ellipsis if there's a gap
+                    if (visiblePages[visiblePages.length - 1] < totalPages - 1) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.className = 'page-ellipsis';
+                        ellipsis.textContent = '...';
+                        pageNumbersContainer.appendChild(ellipsis);
+                    }
+                    
+                    const lastBtn = document.createElement('button');
+                    lastBtn.className = 'btn btn-sm page-btn';
+                    lastBtn.textContent = totalPages;
+                    lastBtn.addEventListener('click', () => showPage(totalPages));
+                    pageNumbersContainer.appendChild(lastBtn);
+                }
+                
+                prevPageBtn.disabled = currentPage === 1;
+                nextPageBtn.disabled = currentPage === totalPages;
+            }
+            
+            function showPage(page) {
+                const startIndex = (page - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                
+                userRows.forEach((row, index) => {
+                    if (index >= startIndex && index < endIndex) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                currentPage = page;
+                renderPagination();
+            }
+            
+            showPage(currentPage);
+            
+            // Previous page button
+            prevPageBtn.addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    showPage(currentPage);
+                }
+            });
+            
+            // Next page button
+            nextPageBtn.addEventListener('click', function() {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    showPage(currentPage);
+                }
+            });
+            
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                let visibleRowCount = 0;
+                
+                userRows.forEach(row => {
+                    const name = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    const username = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                    const email = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+                    
+                    if (name.includes(searchTerm) || username.includes(searchTerm) || email.includes(searchTerm)) {
+                        row.classList.add('search-match');
+                        visibleRowCount++;
+                    } else {
+                        row.classList.remove('search-match');
+                    }
+                });
+                
+                // Reset to first page and show only matching rows
+                currentPage = 1;
+                const matchingRows = document.querySelectorAll('#usersTableBody tr.search-match');
+                const newTotalPages = Math.ceil(matchingRows.length / itemsPerPage);
+                
+                userRows.forEach((row, index) => {
+                    if (row.classList.contains('search-match')) {
+                        const matchIndex = Array.from(matchingRows).indexOf(row);
+                        if (matchIndex >= 0 && matchIndex < itemsPerPage) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                currentPageEl.textContent = currentPage;
+            });
+        });
+    </script>
+}

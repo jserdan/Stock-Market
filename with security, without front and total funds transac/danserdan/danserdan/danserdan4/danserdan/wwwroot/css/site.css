@@ -1,0 +1,464 @@
+/* Purple Theme Colors */
+:root {
+    --purple-primary: #6200EA;
+    --purple-light: #9D46FF;
+    --purple-dark: #3700B3;
+    --purple-accent: #BB86FC;
+    --white: #FFFFFF;
+    --light-gray: #F5F5F5;
+    --dark-gray: #333333;
+    --text-primary: #212121;
+    --text-secondary: #757575;
+}
+
+/* Base Styles */
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+body {
+    margin-bottom: 60px;
+    background-color: #222531;
+    color: white;
+}
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+/* Navbar Styles */
+.navbar {
+    background-color: #222531 !important;
+}
+
+.navbar-brand, .nav-link {
+    color: white !important;
+}
+
+.nav-link:hover {
+    color: #f0f0f0 !important;
+}
+
+.navbar-toggler-icon {
+    background-color: white !important;
+}
+
+.navbar-nav .nav-item {
+    margin-left: 15px;
+}
+
+.auth-tab {
+    position: center;
+    color: white;
+    text-decoration: none;
+    padding-bottom: 4px;
+    font-weight: 500;
+}
+
+    .auth-tab:hover {
+        color: #f0f0f0;
+    }
+
+    .auth-tab.active-tab::after {
+        content: "";
+        position: center;
+        width: 100%;
+        height: 2px;
+        background-color: #f0f0f0;
+        bottom: 0;
+        left: 0;
+    }
+
+/* Modal Styles with Zoom-in Animation */
+.modal.fade .modal-dialog {
+    transform: scale(0.95);
+    opacity: 0;
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+}
+
+.modal.fade.show .modal-dialog {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.modal-dialog {
+    margin: 0 auto;
+    max-width: 400px;
+    margin-top: 15vh;
+}
+
+.modal-content {
+    background-color: white;
+    color: #212121;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-body {
+    padding: 0;
+}
+
+/* Card and Canvas Styles */
+.card canvas {
+    margin-top: 10px;
+}
+
+/* Currency Picker Styles */
+.currency-picker {
+    margin-left: 15px;
+    color: white;
+}
+
+    .currency-picker .dropdown-menu {
+        background-color: #000000;
+        color: white;
+    }
+
+    .currency-picker .dropdown-item {
+        color: white;
+    }
+
+        .currency-picker .dropdown-item:hover {
+            background-color: #f0f0f0;
+        }
+
+/* Active Tab Styles */
+.auth-tab {
+    padding: 10px 20px;
+    text-decoration: none;
+    color: #757575;
+    font-weight: bold;
+}
+
+.active-tab {
+    background-color: #3700B3; /* Active tab background color */
+    color: white; /* Active tab text color */
+    border-radius: 5px;
+}
+
+/* Stock Card Styles */
+.stock-card {
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+    .stock-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+/* Time Frame Button Styles */
+.time-frame-btn.active {
+    background-color: #000000;
+    color: white;
+}
+
+/* Buy/Sell Button Styles */
+.custom-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: 0.2s ease-in-out;
+    font-size: 1rem;
+}
+
+.btn-buy {
+    background-color: #000000;
+    color: white;
+}
+
+    .btn-buy:hover {
+        background-color: #9D46FF;
+        box-shadow: 0 0 10px #9D46FF;
+    }
+
+.btn-sell {
+    background-color: #000000;
+    color: white;
+}
+
+    .btn-sell:hover {
+        background-color: #9D46FF;
+        box-shadow: 0 0 10px #9D46FF;
+    }
+
+/* Modal Dialog Styles */
+.modal-dialog.wide-modal {
+    max-width: 95vw;
+    margin: 2rem auto;
+}
+
+.modal-content {
+    background-color: white;
+    border: 1px solid #333333;
+    border-radius: 10px;
+    color: #212121;
+}
+
+/* Modal Body */
+.modal-body {
+    padding: 0;
+}
+
+#authModal .card {
+    box-shadow: none;
+    padding: 2rem;
+}
+
+/* Chart Modal Styles */
+.modal-body .w-100 {
+    height: 60vh;
+}
+
+/* Buy/Sell Input Adjustment */
+input[type="number"] {
+    width: 80px;
+    background-color: #F5F5F5;
+    color: #212121;
+    border: none;
+}
+
+    input[type="number"]:focus {
+        box-shadow: none;
+    }
+
+/* Styling for the Buy/Sell Quantity Controls */
+.btn-outline-light {
+    background-color: transparent;
+    border: 1px solid white;
+    color: white;
+}
+
+    .btn-outline-light:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+/* Timeframe Buttons Styling */
+.time-frame-btn.active {
+    background-color: #000000;
+    color: white;
+}
+
+/* Background Styling */
+body {
+    margin-bottom: 60px;
+    background-color: #222531;
+    color: white;
+}
+
+.navbar {
+    background-color: #222531 !important;
+}
+
+.navbar-brand, .nav-link {
+    color: white !important;
+}
+
+    .nav-link:hover {
+        color: #f0f0f0 !important;
+        opacity: 0.9;
+    }
+
+.navbar-toggler-icon {
+    background-color: white !important;
+}
+
+.active-tab {
+    color: white;
+    font-weight: bold;
+    border-bottom: 2px solid white !important;
+}
+
+.auth-tab {
+    color: white;
+    padding: 8px 16px;
+    cursor: pointer;
+}
+
+.filter-sidebar {
+    background-color: #000000;
+    border: 1px solid #333333;
+    border-radius: 12px;
+    color: white;
+}
+
+.filter-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-section .form-check {
+    margin-bottom: 10px;
+}
+
+.filter-section .form-check-input {
+    background-color: #000000;
+    border: 1px solid #333333;
+}
+
+    .filter-section .form-check-input:checked {
+        background-color: white; /* White when selected */
+        border-color: white;
+    }
+
+.filter-section .form-check-label {
+    margin-left: 8px;
+    font-weight: normal;
+}
+
+button.btn-link {
+    font-size: 1rem;
+    text-decoration: none;
+}
+
+.wide-modal {
+    max-width: 800px;
+}
+
+.custom-btn {
+    padding: 8px 24px;
+    border-radius: 8px;
+    border: none;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-buy {
+    background-color: #000000;
+    color: white;
+}
+
+.btn-sell {
+    background-color: #000000;
+    color: white;
+}
+
+.custom-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+}
+
+.filter-sidebar {
+    background-color: #000000;
+    border: 1px solid #333333;
+    border-radius: 8px;
+}
+
+.filter-title {
+    color: white;
+    border-bottom: 1px solid #333333;
+    padding-bottom: 10px;
+}
+
+.price-up {
+    animation: flash-green 1s;
+}
+
+.price-down {
+    animation: flash-red 1s;
+}
+
+/* Form Control Styles */
+.form-control {
+    background-color: #F5F5F5;
+    border: 1px solid #333333;
+    color: #212121;
+}
+
+.form-control:focus {
+    background-color: white;
+    border-color: #BB86FC;
+    color: #212121;
+    box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.25);
+}
+
+/* Button Styles */
+.btn-primary {
+    background-color: #000000;
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background-color: #9D46FF;
+    color: white;
+}
+
+.btn-outline-light {
+    background-color: transparent;
+    border: 1px solid white;
+    color: white;
+}
+
+.btn-outline-light:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Founders section styling */
+.founders-heading {
+    text-align: center;
+    margin-bottom: 4rem;
+}
+
+.founder-item {
+    margin-bottom: 5rem;
+}
+
+.founder-image-container {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    margin: 0 auto 2rem;
+}
+
+.founder-image-wrapper {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.founder-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.founder-info {
+    text-align: center;
+}
+
+@media (min-width: 768px) {
+    .founder-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .founder-image-container {
+        margin: 0;
+    }
+
+    .founder-info {
+        text-align: left;
+        padding-left: 3rem;
+    }
+}

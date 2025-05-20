@@ -1,0 +1,54 @@
+@model danserdan.Models.Stocks
+
+<div class="modal fade" id="tradeModal_@Model.stock_id" tabindex="-1" aria-labelledby="tradeModalLabel_@Model.stock_id" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: #2a2d3a; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <h5 class="modal-title text-white" id="tradeModalLabel_@Model.stock_id">
+                    <div class="d-flex align-items-center">
+                        <div class="symbol me-2" style="width: 30px; height: 30px; background-color: #3b82f6; border-radius: 6px; display: flex; align-items: center; justify-content: center;">
+                            <span class="text-white fw-bold">@Model.symbol[0]</span>
+                        </div>
+                        <span>@Model.symbol - @Model.company_name</span>
+                    </div>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="current-price-container mb-4">
+                    <label class="text-muted mb-1">Current Price</label>
+                    <h3 class="text-white mb-0">$<span id="currentPrice_@Model.stock_id">@Model.market_price.ToString("F2")</span></h3>
+                </div>
+
+                <div class="mb-3">
+                    <label for="quantity_@Model.stock_id" class="form-label text-muted">Quantity</label>
+                    <div class="input-group">
+                        <button class="btn btn-dark border-0" type="button" onclick="decrementQuantity('@Model.stock_id')">
+                            <i class="bi bi-dash-lg"></i>
+                        </button>
+                        <input type="number" class="form-control bg-dark text-white text-center" id="quantity_@Model.stock_id" value="1" min="1">
+                        <button class="btn btn-dark border-0" type="button" onclick="incrementQuantity('@Model.stock_id')">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label text-muted">Total Amount</label>
+                    <h4 class="text-white">$<span id="totalAmount_@Model.stock_id">@Model.market_price.ToString("F2")</span></h4>
+                </div>
+
+                <div class="alert alert-info d-none" id="tradeMessage_@Model.stock_id" role="alert">
+                </div>
+            </div>
+            <div class="modal-footer d-flex justify-content-between" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                <button type="button" class="btn btn-danger" style="flex: 1; background-color: #ef4444;" onclick="tradeStock('@Model.symbol', 'sell', '@Model.stock_id')">
+                    <i class="bi bi-cart-dash me-1"></i> Sell
+                </button>
+                <button type="button" class="btn btn-success" style="flex: 1; background-color: #4ade80;" onclick="tradeStock('@Model.symbol', 'buy', '@Model.stock_id')">
+                    <i class="bi bi-cart-plus me-1"></i> Buy
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

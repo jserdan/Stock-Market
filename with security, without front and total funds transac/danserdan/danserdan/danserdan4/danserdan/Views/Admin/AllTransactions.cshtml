@@ -1,0 +1,336 @@
+@model List<danserdan.Models.Transaction>
+@using danserdan.Services
+@inject ApplicationDBContext _context
+@inject CurrencyService _currencyService
+
+@{
+    ViewData["Title"] = "All Transactions";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Recent Transactions</h1>
+        <a href="@Url.Action("Index", "Admin")" class="btn btn-outline-light">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0" style="background-color: #2a2d3a; border-radius: 12px;">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <input type="text" id="transactionSearch" class="form-control search-control" placeholder="Search transactions...">
+                </div>
+                <div class="pagination-controls">
+                    <button id="prevPageBtn" class="btn btn-sm">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <div id="pageNumbers" class="d-inline-flex"></div>
+                    <button id="nextPageBtn" class="btn btn-sm">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Stock</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Quantity</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsTableBody">
+                        @foreach (var transaction in Model)
+                        {
+                            <tr>
+                                <td>@transaction.transaction_id</td>
+                                <td>
+                                    @if (transaction.User != null)
+                                    {
+                                        <span>@transaction.User.firstName @transaction.User.lastName</span>
+                                    }
+                                    else
+                                    {
+                                        <span>User #@transaction.user_id</span>
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        string symbol;
+                                        if (transaction.StockId.HasValue)
+                                        {
+                                            var stock = await _context.Stocks.FindAsync(transaction.StockId);
+                                            symbol = stock?.symbol ?? "Unknown";
+                                        }
+                                        else
+                                        {
+                                            // This is a funds transaction (Add Funds or Payout)
+                                            symbol = "-";
+                                        }
+                                    }
+                                    @symbol
+                                </td>
+                                <td>
+                                    @if (transaction.StockId.HasValue)
+                                    {
+                                        if (transaction.Price > 0)
+                                        {
+                                            <span class="badge bg-success">Buy</span>
+                                        }
+                                        else if (transaction.Price < 0)
+                                        {
+                                            <span class="badge bg-danger">Sell</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Unknown</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        @if (transaction.Price > 0)
+                                        {
+                                            <span class="badge bg-primary">Add Funds</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Payout</span>
+                                        }
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        var usdAmount = Math.Abs(transaction.Price * transaction.quantity);
+                                        var preferredCurrency = _currencyService.GetUserPreferredCurrency();
+                                        var displayAmount = usdAmount;
+                                        var currencySymbol = "$";
+                                        
+                                        if (preferredCurrency == "PHP")
+                                        {
+                                            displayAmount = decimal.Round(usdAmount * 56.5m, 2);
+                                            currencySymbol = "₱";
+                                        }
+                                    }
+                                    <span class="transaction-amount" data-price-usd="@usdAmount.ToString("F2")" data-currency="@preferredCurrency">
+                                        @currencySymbol@displayAmount.ToString("F2")
+                                    </span>
+                                    @if (transaction.TransactionType != null && transaction.TransactionType.Contains("PHP"))
+                                    {
+                                        <small class="text-muted d-block">@transaction.TransactionType</small>
+                                    }
+                                    @if (preferredCurrency == "USD" && transaction.TransactionType != null && transaction.TransactionType.Contains("PHP"))
+                                    {
+                                        <small class="text-muted d-block">Original: ₱@decimal.Round(usdAmount * 56.5m, 2).ToString("F2")</small>
+                                    }
+                                    @if (preferredCurrency == "PHP" && !string.IsNullOrEmpty(transaction.TransactionType) && !transaction.TransactionType.Contains("PHP"))
+                                    {
+                                        <small class="text-muted d-block">Original: $@usdAmount.ToString("F2")</small>
+                                    }
+                                </td>
+                                <td>@transaction.quantity</td>
+                                <td>@transaction.TransactionTime.ToString("MM/dd/yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Currency conversion constants
+            const USD_TO_PHP_RATE = 56.5;
+            let currentCurrency = localStorage.getItem('preferredCurrency') || 'USD';
+            
+            // Initialize currency display
+            updateTransactionAmounts();
+            
+            // Listen for currency changes from the layout
+            document.addEventListener('currencyChanged', function(event) {
+                currentCurrency = event.detail.currency;
+                updateTransactionAmounts();
+            });
+            
+            // Function to update transaction amounts based on currency
+            function updateTransactionAmounts() {
+                const transactionAmounts = document.querySelectorAll('.transaction-amount');
+                
+                transactionAmounts.forEach(element => {
+                    const usdPrice = parseFloat(element.getAttribute('data-price-usd'));
+                    if (!isNaN(usdPrice)) {
+                        if (currentCurrency === 'PHP') {
+                            // Convert from USD to PHP
+                            const phpPrice = usdPrice * USD_TO_PHP_RATE;
+                            element.textContent = '₱' + phpPrice.toFixed(2);
+                        } else {
+                            // Show in USD
+                            element.textContent = '$' + usdPrice.toFixed(2);
+                        }
+                    }
+                });
+            }
+            // Pagination for transactions table
+            const itemsPerPage = 10;
+            const transactionRows = document.querySelectorAll('#transactionsTableBody tr');
+            const totalPages = Math.ceil(transactionRows.length / itemsPerPage);
+            let currentPage = 1;
+            const chunkSize = 3; // Number of page buttons to show at once
+            
+            const pageNumbersContainer = document.getElementById('pageNumbers');
+            const prevPageBtn = document.getElementById('prevPageBtn');
+            const nextPageBtn = document.getElementById('nextPageBtn');
+            const searchInput = document.getElementById('transactionSearch');
+            
+            function getVisiblePageNumbers(current, total, chunk) {
+                const halfChunk = Math.floor(chunk / 2);
+                let start = Math.max(1, current - halfChunk);
+                let end = Math.min(total, start + chunk - 1);
+                
+                // Adjust start if we're near the end
+                if (end - start + 1 < chunk && start > 1) {
+                    start = Math.max(1, end - chunk + 1);
+                }
+                
+                return Array.from({length: end - start + 1}, (_, i) => start + i);
+            }
+            
+            function renderPagination() {
+                pageNumbersContainer.innerHTML = '';
+                
+                const visiblePages = getVisiblePageNumbers(currentPage, totalPages, chunkSize);
+                const showFirstPage = visiblePages[0] > 1;
+                const showLastPage = visiblePages[visiblePages.length - 1] < totalPages;
+                
+                // Add first page button if needed
+                if (showFirstPage) {
+                    const firstBtn = document.createElement('button');
+                    firstBtn.className = 'btn btn-sm page-btn';
+                    firstBtn.textContent = '1';
+                    firstBtn.addEventListener('click', () => showPage(1));
+                    pageNumbersContainer.appendChild(firstBtn);
+                    
+                    // Add ellipsis if there's a gap
+                    if (visiblePages[0] > 2) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.className = 'page-ellipsis';
+                        ellipsis.textContent = '...';
+                        pageNumbersContainer.appendChild(ellipsis);
+                    }
+                }
+                
+                // Add visible page buttons
+                visiblePages.forEach(page => {
+                    const pageBtn = document.createElement('button');
+                    pageBtn.className = 'btn btn-sm page-btn';
+                    if (page === currentPage) {
+                        pageBtn.classList.add('active');
+                    }
+                    pageBtn.textContent = page;
+                    pageBtn.addEventListener('click', () => showPage(page));
+                    pageNumbersContainer.appendChild(pageBtn);
+                });
+                
+                // Add last page button if needed
+                if (showLastPage) {
+                    // Add ellipsis if there's a gap
+                    if (visiblePages[visiblePages.length - 1] < totalPages - 1) {
+                        const ellipsis = document.createElement('span');
+                        ellipsis.className = 'page-ellipsis';
+                        ellipsis.textContent = '...';
+                        pageNumbersContainer.appendChild(ellipsis);
+                    }
+                    
+                    const lastBtn = document.createElement('button');
+                    lastBtn.className = 'btn btn-sm page-btn';
+                    lastBtn.textContent = totalPages;
+                    lastBtn.addEventListener('click', () => showPage(totalPages));
+                    pageNumbersContainer.appendChild(lastBtn);
+                }
+                
+                prevPageBtn.disabled = currentPage === 1;
+                nextPageBtn.disabled = currentPage === totalPages;
+            }
+            
+            function showPage(page) {
+                const startIndex = (page - 1) * itemsPerPage;
+                const endIndex = startIndex + itemsPerPage;
+                
+                transactionRows.forEach((row, index) => {
+                    if (index >= startIndex && index < endIndex) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                currentPage = page;
+                renderPagination();
+            }
+            
+            showPage(currentPage);
+            
+            // Previous page button
+            prevPageBtn.addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    showPage(currentPage);
+                }
+            });
+            
+            // Next page button
+            nextPageBtn.addEventListener('click', function() {
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    showPage(currentPage);
+                }
+            });
+            
+            // Search functionality
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                let visibleRowCount = 0;
+                
+                transactionRows.forEach(row => {
+                    const userId = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    const stockSymbol = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                    const transactionType = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+                    
+                    if (userId.includes(searchTerm) || stockSymbol.includes(searchTerm) || transactionType.includes(searchTerm)) {
+                        row.classList.add('search-match');
+                        visibleRowCount++;
+                    } else {
+                        row.classList.remove('search-match');
+                    }
+                });
+                
+                // Reset to first page and show only matching rows
+                currentPage = 1;
+                const matchingRows = document.querySelectorAll('#transactionsTableBody tr.search-match');
+                const newTotalPages = Math.ceil(matchingRows.length / itemsPerPage);
+                
+                transactionRows.forEach((row, index) => {
+                    if (row.classList.contains('search-match')) {
+                        const matchIndex = Array.from(matchingRows).indexOf(row);
+                        if (matchIndex >= 0 && matchIndex < itemsPerPage) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                
+                currentPageEl.textContent = currentPage;
+            });
+        });
+    </script>
+}

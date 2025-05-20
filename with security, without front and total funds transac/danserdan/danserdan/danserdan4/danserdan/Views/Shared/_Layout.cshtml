@@ -1,0 +1,505 @@
+@using danserdan.Services
+@using Microsoft.EntityFrameworkCore
+@using System.Linq
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TradeS</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/modern-theme.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/danserdan.styles.css" asp-append-version="true" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    @await RenderSectionAsync("Styles", required: false)
+
+</head>
+<body class="position-relative @(ViewContext.RouteData.Values["controller"].ToString() == "Home" && ViewContext.RouteData.Values["action"].ToString() == "Index" ? "homepage" : "other-page")">
+    <style>
+        .homepage {
+            min-height: 100vh;
+            overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+            background: linear-gradient(135deg, #1a1a24 0%, #2a2d3a 100%);
+        }
+        .homepage::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        .other-page {
+            min-height: 100vh;
+            overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+            background: linear-gradient(135deg, #1a1a24 0%, #2a2d3a 100%);
+        }
+        .other-page::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+    </style>
+    <!-- Global background effects -->
+    <div class="position-fixed" style="top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 30% 30%, rgba(124, 58, 237, 0.15), transparent 70%), radial-gradient(circle at 70% 70%, rgba(236, 72, 153, 0.1), transparent 70%); z-index: -1;"></div>
+    <div class="position-fixed float-element-slow" style="top: 15%; left: 10%; width: 500px; height: 500px; background: linear-gradient(45deg, rgba(124, 58, 237, 0.03), rgba(236, 72, 153, 0.03)); border-radius: 50%; filter: blur(100px); z-index: -1;"></div>
+    <div class="position-fixed float-element" style="bottom: 15%; right: 10%; width: 450px; height: 450px; background: linear-gradient(45deg, rgba(236, 72, 153, 0.03), rgba(124, 58, 237, 0.03)); border-radius: 50%; filter: blur(80px); z-index: -1;"></div>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-dark" style="padding: 0.8rem 2rem; z-index: 1000;">
+            <div class="container-fluid">
+                <!-- TradeS Logo (Outside the box) -->
+                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                    <span class="fw-bold" style="font-size: 1.4rem; letter-spacing: 0.5px; display: flex; align-items: center;">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="me-2">
+                            <circle cx="12" cy="12" r="10" fill="#7e22ce" />
+                            <path d="M8 12L12 8L16 12L12 16L8 12Z" fill="white" />
+                        </svg>
+                        TradeS
+                    </span>
+                </a>
+                
+                <!-- Centered Navigation Box -->
+                <div class="mx-auto" style="max-width: 600px;">
+                    <div class="modern-navbar d-flex justify-content-center align-items-center" style="padding: 0.3rem 1.5rem; width: 100%; border-radius: 12px; background: var(--dark-bg); backdrop-filter: blur(10px); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1); border: 1px solid var(--dark-bg);">
+                        <ul class="navbar-nav align-items-center mb-0 d-flex flex-row">
+                            @{
+                                bool isAdmin = !string.IsNullOrEmpty(Context.Session.GetString("IsAdmin")) && 
+                                                bool.TryParse(Context.Session.GetString("IsAdmin"), out var adminStatus) && 
+                                                adminStatus;
+                            }
+                            
+                            @if (!isAdmin)
+                            {
+                            <li class="nav-item">
+                                <a class="nav-link text-white px-3" asp-controller="Home" asp-action="Stocks">
+                                    <i class="bi bi-graph-up me-1"></i> Stocks
+                                </a>
+                            </li>
+                            }
+                            
+                            <li class="nav-item">
+                                <a class="nav-link text-white px-3" asp-controller="Home" asp-action="Aboutus">
+                                    <i class="bi bi-info-circle me-1"></i> About
+                                </a>
+                            </li>
+                            <!-- Currency Dropdown -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-white px-3" href="#" id="currencyDropdown" role="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-currency-exchange me-1"></i>
+                                    <span id="currencyText">USD ($)</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" style="background-color: #2a2d3a; border-color: rgba(255,255,255,0.1);">
+                                    <li><a class="dropdown-item text-white" href="javascript:void(0)" onclick="setCurrency('USD')">USD ($)</a></li>
+                                    <li><a class="dropdown-item text-white" href="javascript:void(0)" onclick="setCurrency('PHP')">PHP (₱)</a></li>
+                                </ul>
+                            </li>
+                            <!-- Balance (only shown when logged in) -->
+                            @if (Context.Session.GetString("UserEmail") != null && !isAdmin)
+                            {
+                                <li class="nav-item">
+                                    @{
+                                        var userEmail = Context.Session.GetString("UserEmail");
+                                        var dbContext = Context.RequestServices.GetService<danserdan.Services.ApplicationDBContext>();
+                                        var currencyService = Context.RequestServices.GetService<danserdan.Services.CurrencyService>();
+                                        var user = dbContext?.Users.FirstOrDefault(u => u.email == userEmail);
+                                        // TODO: Replace with computed balance from all transactions
+                                        var balanceInUsd = user?.balance ?? 0.00m;
+                                        var preferredCurrency = currencyService?.GetUserPreferredCurrency() ?? "USD";
+                                        var displayAmount = balanceInUsd;
+                                        var currencySymbol = "$";
+                                        
+                                        if (preferredCurrency == "PHP")
+                                        {
+                                            displayAmount = decimal.Round(balanceInUsd * 56.5m, 2);
+                                            currencySymbol = "₱";
+                                        }
+                                    }
+                                    <a href="/Payment/AddFunds" class="nav-link text-white px-3">
+                                        <i class="bi bi-wallet2 me-1"></i>
+                                        <span id="navBalanceCurrency">@currencySymbol</span><span id="navBalance" data-original-usd="@balanceInUsd.ToString("F2")" data-currency="@preferredCurrency">@displayAmount.ToString("F2")</span>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Login Button (Outside the box) -->
+                <div>
+                    @if (Context.Session.GetString("UserEmail") != null)
+                    {
+                        <div class="dropdown">
+                            <a class="nav-link dropdown-toggle text-white" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <span class="d-inline-block rounded-circle bg-primary text-white" style="width: 24px; height: 24px; line-height: 24px; text-align: center; margin-right: 5px;">
+                                    @(Context.Session.GetString("Username")?[0])
+                                </span>
+                                @Context.Session.GetString("Username")
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" style="background-color: #2a2d3a; border-color: rgba(255,255,255,0.1);">
+                                @if (!isAdmin)
+                                {
+                                <li><a class="dropdown-item text-white" asp-controller="Account" asp-action="Profile"><i class="bi bi-person me-2"></i>Profile</a></li>
+                                }
+                                @if (isAdmin)
+                                {
+                                <li><a class="dropdown-item text-white" asp-controller="Admin" asp-action="Index"><i class="bi bi-speedometer2 me-2"></i>Admin Dashboard</a></li>
+                                }
+                                <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.1);"></li>
+                                <li><a class="dropdown-item text-white" asp-controller="Account" asp-action="Logout"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <a class="btn-gradient px-4 py-2 text-white" href="#" data-bs-toggle="modal" data-bs-target="#loginModal">Login</a>
+                    }
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Back Button (hidden on homepage and admin pages) -->
+    @if (!(ViewContext.RouteData.Values["controller"].ToString() == "Home" && ViewContext.RouteData.Values["action"].ToString() == "Index") && 
+          !(ViewContext.RouteData.Values["controller"].ToString() == "Admin"))
+    {
+        <div style="position: fixed; top: 90px; left: 20px; z-index: 100;">
+            <a href="javascript:history.back()" class="btn-back" style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8)); box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3); transition: all 0.3s ease;">
+                <i class="bi bi-arrow-left text-white" style="font-size: 1.2rem;"></i>
+            </a>
+        </div>
+    }
+    
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+        main::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Global pagination styling */
+        .pagination .page-item .page-link {
+            background-color: #2a2d3a;
+            border-color: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .pagination .page-item.active .page-link,
+        .pagination .page-item .page-link:hover {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8));
+            border-color: transparent;
+            color: white;
+        }
+        
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 1rem;
+        }
+        
+        .pagination-controls .btn {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8));
+            color: white;
+            border: none;
+            margin: 0 0.25rem;
+        }
+        
+        .pagination-controls .page-indicator {
+            color: white;
+            margin: 0 0.5rem;
+        }
+        
+        .pagination-controls .page-btn {
+            background-color: #2a2d3a;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 0 0.15rem;
+            min-width: 32px;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .pagination-controls .page-btn.active {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8));
+            border-color: transparent;
+            color: white;
+        }
+        
+        .pagination-controls .page-btn:hover:not(.active) {
+            background-color: #3a3d4a;
+        }
+        
+        .pagination-controls .page-ellipsis {
+            color: white;
+            margin: 0 0.25rem;
+            display: inline-block;
+            padding: 0.25rem 0.1rem;
+            font-size: 0.875rem;
+        }
+        
+        .search-control {
+            background-color: #2a2d3a;
+            border-color: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .search-control::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+    </style>
+    
+    <div class="container" style="margin-top: 0; padding-bottom: 100px;">
+        <main role="main" class="pb-3" style="min-height: calc(100vh - 60px); overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none;">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center text-lg-start text-white" style="background-color: #1c2331">
+        <!-- Section: Social media -->
+        <section class="d-flex justify-content-between p-4" style="background-color: #6351ce">
+            <!-- Left -->
+            <div class="me-5">
+                <span>Get connected with us on social networks:</span>
+            </div>
+            <!-- Left -->
+
+            <!-- Right -->
+            <div>
+                <a href="" class="text-white me-4">
+                    <i class="fab fa-facebook-f"></i>
+                </a>
+                <a href="" class="text-white me-4">
+                    <i class="fab fa-twitter"></i>
+                </a>
+                <a href="" class="text-white me-4">
+                    <i class="fab fa-google"></i>
+                </a>
+                <a href="" class="text-white me-4">
+                    <i class="fab fa-instagram"></i>
+                </a>
+                <a href="" class="text-white me-4">
+                    <i class="fab fa-linkedin"></i>
+                </a>
+                <a href="" class="text-white me-4">
+                    <i class="fab fa-github"></i>
+                </a>
+            </div>
+            <!-- Right -->
+        </section>
+        <!-- Section: Social media -->
+
+        <!-- Section: Links  -->
+        <section class="">
+            <div class="container text-center text-md-start mt-5">
+                <!-- Grid row -->
+                <div class="row mt-3">
+                    <!-- Grid column -->
+                    <div class="col-md-3 col-lg-4 col-xl-3 mx-auto mb-4">
+                        <!-- Content -->
+                        <h6 class="text-uppercase fw-bold">TradeS</h6>
+                        <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 2px" />
+                        <p>
+                            TradeS makes stock trading simple and accessible for everyone. Whether you're new to investing or an experienced trader, our easy-to-use platform helps you trade stocks with confidence.
+                        </p>
+                    </div>
+                    <!-- Grid column -->
+
+                    <!-- Grid column -->
+                    <div class="col-md-2 col-lg-2 col-xl-2 mx-auto mb-4">
+                        <!-- Links -->
+                        <h6 class="text-uppercase fw-bold">Products</h6>
+                        <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 2px" />
+                        <p>
+                            <a href="/Home/Stocks" class="text-white">Stocks</a>
+                        </p>
+                        <p>
+                            <a href="/Home/Aboutus" class="text-white">About Us</a>
+                        </p>
+                      
+                    </div>
+                    <!-- Grid column -->
+
+                    <!-- Grid column -->
+                    <div class="col-md-3 col-lg-2 col-xl-2 mx-auto mb-4">
+                        <!-- Links -->
+                        <h6 class="text-uppercase fw-bold mb-4">Useful links</h6>
+                        <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 1px" />
+                        <p>
+                            <a href="#!" class="text-reset" id="accountLink">Your Account</a>
+                        </p>
+                        <p>
+                            <a href="/Home/Aboutus" class="text-reset">About Us</a>
+                        </p>
+                        <p>
+                            <a href="@Url.Action("TheTeam", "Home")" class="text-reset">The Team</a>
+                        </p>
+                    </div>
+                    <!-- Grid column -->
+
+                    <!-- Grid column -->
+                    <div class="col-md-4 col-lg-3 col-xl-3 mx-auto mb-md-0 mb-4">
+                        <!-- Links -->
+                        <h6 class="text-uppercase fw-bold">Contact</h6>
+                        <hr class="mb-4 mt-0 d-inline-block mx-auto" style="width: 60px; background-color: #7c4dff; height: 2px" />
+                        <p><i class="fas fa-home me-3"></i> University of Mindanao</p>
+                        <p><i class="fas fa-envelope me-3"></i> info@trades.com</p>
+                        <p><i class="fas fa-phone me-3"></i> 09054057984</p>
+                    </div>
+                    <!-- Grid column -->
+                </div>
+                <!-- Grid row -->
+            </div>
+        </section>
+        <!-- Section: Links  -->
+
+        <!-- Copyright -->
+        <div class="text-center p-3" style="background-color: rgba(0, 0, 0, 0.2)">
+            © 2025 Copyright:
+            <a class="text-white" href="#">TradeS.com</a>
+        </div>
+        <!-- Copyright -->
+    </footer>
+    <!-- Footer -->
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/trade.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <!-- Include Login and Signup Modals -->
+    @await Html.PartialAsync("_LoginPartial")
+    @await Html.PartialAsync("_SignupPartial")
+
+    <script>
+    // Currency conversion constants
+        const USD_TO_PHP_RATE = 56.5;
+    
+    // Handle account link click
+    document.getElementById('accountLink').addEventListener('click', function(e) {
+        e.preventDefault();
+        const userEmail = '@ViewBag.UserEmail';
+        if (userEmail) {
+            window.location.href = '/Home/Profile';
+        } else {
+            // Show login modal
+            const loginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+            loginModal.show();
+        }
+    });
+    
+    // Function to handle currency toggle
+    function setCurrency(currency) {
+        // Store the selected currency in local storage
+            localStorage.setItem('preferredCurrency', currency);
+        
+        // Update the currency display in the dropdown
+        document.getElementById('currencyText').textContent = currency === 'PHP' ? 'PHP (₱)' : 'USD ($)';
+        
+        // Update any amount displays
+        updateCurrencyDisplay(currency);
+        
+        // Dispatch a custom event for other scripts to listen for currency changes
+        document.dispatchEvent(new CustomEvent('currencyChanged', { 
+            detail: { currency: currency }
+        }));
+        
+        // Make an AJAX call to update the server-side preference
+        fetch('/Home/SetCurrency?currency=' + currency, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+    }
+    
+    // Function to update currency display throughout the page
+    function updateCurrencyDisplay(currency) {
+        // Update navbar balance if it exists
+        const navBalance = document.getElementById('navBalance');
+        const navBalanceCurrency = document.getElementById('navBalanceCurrency');
+        
+        if (navBalance && navBalanceCurrency) {
+            const originalUsd = parseFloat(navBalance.getAttribute('data-original-usd'));
+            if (currency === 'PHP') {
+                navBalance.textContent = (originalUsd * USD_TO_PHP_RATE).toFixed(2);
+                navBalanceCurrency.textContent = '₱';
+                        } else {
+                navBalance.textContent = originalUsd.toFixed(2);
+                navBalanceCurrency.textContent = '$';
+            }
+            navBalance.setAttribute('data-currency', currency);
+        }
+        
+        // Update all price elements if they exist
+        const priceElements = document.querySelectorAll('.price');
+        priceElements.forEach(el => {
+            const usdPrice = parseFloat(el.getAttribute('data-price-usd'));
+                if (!isNaN(usdPrice)) {
+                    if (currency === 'PHP') {
+                    el.textContent = el.textContent.replace('$', '₱').replace(
+                        usdPrice.toFixed(2), 
+                        (usdPrice * USD_TO_PHP_RATE).toFixed(2)
+                    );
+                    } else {
+                    el.textContent = el.textContent.replace('₱', '$').replace(
+                        (usdPrice * USD_TO_PHP_RATE).toFixed(2), 
+                        usdPrice.toFixed(2)
+                    );
+                    }
+                }
+            });
+        }
+        
+    // Initialize currency on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const savedCurrency = localStorage.getItem('preferredCurrency') || 'USD';
+        document.getElementById('currencyText').textContent = savedCurrency === 'PHP' ? 'PHP (₱)' : 'USD ($)';
+        
+        // If the navBalance has a different currency than saved, update it
+        const navBalance = document.getElementById('navBalance');
+        if (navBalance && navBalance.getAttribute('data-currency') !== savedCurrency) {
+            updateCurrencyDisplay(savedCurrency);
+        }
+    });
+    
+    // Handle modal switching between login and signup
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.classList.contains('modal-switch')) {
+            e.preventDefault();
+            const currentModal = bootstrap.Modal.getInstance(e.target.closest('.modal'));
+            const targetModalId = e.target.getAttribute('data-target');
+            
+            if (currentModal && targetModalId) {
+                currentModal.hide();
+                setTimeout(() => {
+                    const targetModal = new bootstrap.Modal(document.getElementById(targetModalId));
+                    targetModal.show();
+                }, 500);
+            }
+        }
+        });
+    </script>
+    
+    @* Only include session timeout script for authenticated users *@
+    @if (Context.Session.GetString("Username") != null)
+    {
+        <script src="~/js/session-timeout.js"></script>
+        <script>
+            // Check if user is still active every minute
+            setInterval(function() {
+                // Send a ping to the server to keep the session alive if user is active
+                fetch('/Account/KeepSessionAlive', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+            }, 60000); // Check every minute
+        </script>
+    }
+</body>
+</html>

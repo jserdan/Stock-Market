@@ -1,0 +1,473 @@
+/* Modern Theme CSS - Global Styles */
+
+/* Stock Trading Platform Theme - Created 2025-05-10 */
+
+:root {
+    --primary-color: #7c3aed;
+    --secondary-color: #ec4899;
+    --dark-bg: #1a1a24;
+    --card-bg: rgba(30, 30, 46, 0.7);
+    --text-primary: rgba(255, 255, 255, 0.9);
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-muted: rgba(255, 255, 255, 0.5);
+    --gradient-primary: linear-gradient(90deg, #7c3aed, #ec4899);
+    --gradient-bg: linear-gradient(90deg, rgba(124, 58, 237, 0.2), rgba(236, 72, 153, 0.2));
+    --shadow-sm: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 6px 15px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.2);
+    --border-radius-sm: 0.5rem;
+    --border-radius-md: 1rem;
+    --border-radius-lg: 1.5rem;
+    --border-radius-pill: 50px;
+}
+
+/* Global styles */
+body {
+    background-color: var(--dark-bg);
+    color: var(--text-primary);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+
+/* Card styles */
+.modern-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.modern-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Button styles */
+.btn-gradient {
+    background: var(--gradient-primary);
+    color: white !important;
+    border: none;
+    border-radius: var(--border-radius-pill);
+    padding: 0.6rem 1.5rem;
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    color: white;
+}
+
+.btn-outline {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--border-radius-pill);
+    padding: 0.6rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-outline:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+/* Text styles */
+.gradient-text {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+/* Form controls */
+.form-control {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-radius: var(--border-radius-sm);
+    padding: 0.75rem 1rem;
+}
+
+.form-control:focus {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(124, 58, 237, 0.5);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.25rem rgba(124, 58, 237, 0.25);
+}
+
+/* Tables */
+.modern-table {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+}
+
+.modern-table thead th {
+    background-color: rgba(0, 0, 0, 0.2);
+    color: var(--text-secondary);
+    font-weight: 500;
+    border-bottom: none;
+    padding: 1rem;
+}
+
+.modern-table tbody tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.modern-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.modern-table tbody td {
+    padding: 1rem;
+    color: var(--text-primary);
+}
+
+/* Badges */
+.badge-gradient {
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: var(--border-radius-pill);
+    padding: 0.35em 0.65em;
+    font-weight: 500;
+}
+
+/* Navbar */
+.modern-navbar {
+    background: var(--dark-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: var(--border-radius-pill);
+    box-shadow: var(--shadow-md);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Dropdown */
+.dropdown-menu {
+    background-color: var(--card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius-md);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: var(--shadow-md);
+}
+
+.dropdown-item {
+    color: var(--text-secondary);
+}
+
+.dropdown-item:hover, .dropdown-item:focus {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+/* Stock trading specific styles */
+.stock-card {
+    background: var(--card-bg);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-radius: var(--border-radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden;
+}
+
+/* Profile page styles */
+.avatar-circle {
+    background: var(--gradient-primary);
+    box-shadow: var(--shadow-md);
+    transition: transform 0.3s ease;
+}
+
+.avatar-circle:hover {
+    transform: scale(1.05);
+}
+
+/* Card styling for profile page */
+.card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+}
+
+.card-header {
+    background: linear-gradient(90deg, rgba(124, 58, 237, 0.2), rgba(236, 72, 153, 0.2));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.symbol {
+    background: var(--gradient-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.stock-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+    border-color: rgba(124, 58, 237, 0.2);
+}
+
+.stock-header {
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.stock-price {
+    font-weight: 600;
+    font-size: 1.5rem;
+}
+
+.stock-symbol {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stock-name {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Price change indicators */
+.price-up {
+    color: #4ade80;
+}
+
+.price-down {
+    color: #ef4444;
+}
+
+/* Trading buttons */
+.btn-buy {
+    background: linear-gradient(90deg, #10b981, #4ade80);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-pill);
+    padding: 0.6rem 1.5rem;
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.btn-buy:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    color: white;
+}
+
+.btn-sell {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-pill);
+    padding: 0.6rem 1.5rem;
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.btn-sell:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    color: white;
+}
+
+/* Chart styles */
+.chart-container {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--border-radius-md);
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Time period badges */
+.time-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: var(--border-radius-pill);
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.time-badge.positive {
+    background: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+}
+
+.time-badge.negative {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+/* Input styles for trading */
+.trade-input {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-radius: var(--border-radius-sm);
+}
+
+.trade-input:focus {
+    background: rgba(0, 0, 0, 0.3);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(124, 58, 237, 0.25);
+}
+
+/* Price animations */
+@keyframes pulse-green {
+    0% {
+        background-color: rgba(74, 222, 128, 0);
+    }
+    50% {
+        background-color: rgba(74, 222, 128, 0.3);
+    }
+    100% {
+        background-color: rgba(74, 222, 128, 0);
+    }
+}
+
+@keyframes pulse-red {
+    0% {
+        background-color: rgba(239, 68, 68, 0);
+    }
+    50% {
+        background-color: rgba(239, 68, 68, 0.3);
+    }
+    100% {
+        background-color: rgba(239, 68, 68, 0);
+    }
+}
+
+.pulse-green {
+    animation: pulse-green 1s ease-out;
+}
+
+.pulse-red {
+    animation: pulse-red 1s ease-out;
+}
+
+/* Floating elements animation */
+@keyframes float {
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-20px);
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+.float-element {
+    animation: float 6s ease-in-out infinite;
+}
+
+.float-element-slow {
+    animation: float 8s ease-in-out infinite;
+}
+
+.float-element-fast {
+    animation: float 4s ease-in-out infinite;
+}
+
+/* New Homepage Specific Styles */
+.market-movers-tile {
+    margin-top: 20px;
+}
+
+.fund-tile {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.fund-tile:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.feature-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.features-section {
+    position: relative;
+    z-index: 1;
+    margin-top: 30px;
+}
+
+.features-section::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: linear-gradient(to bottom, transparent, rgba(26, 26, 36, 0.8));
+    z-index: -1;
+}
+
+/* Stock Card Animation */
+.stock-card {
+    transition: all 0.3s ease;
+}
+
+.stock-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Scrollable Page Styles */
+.scrollable-content {
+    padding-bottom: 60px;
+}
+
+/* Footer Base Styles */
+.footer {
+    opacity: 1;
+    visibility: visible;
+    background: linear-gradient(180deg, rgba(26, 26, 36, 0.8), rgba(26, 26, 36, 1));
+    backdrop-filter: blur(10px);
+}
+
+/* Social Media Section */
+.footer .bi {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+.footer .bi:hover {
+    transform: scale(1.2);
+}
+
+/* Links Styling */
+.footer a {
+    text-decoration: none;
+    transition: opacity 0.3s ease;
+}
+.footer a:hover {
+    opacity: 0.8;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .footer .d-flex {
+        flex-direction: column;
+        text-align: center;
+    }
+    .footer .me-5 {
+        margin-right: 0 !important;
+        margin-bottom: 1rem;
+    }
+}

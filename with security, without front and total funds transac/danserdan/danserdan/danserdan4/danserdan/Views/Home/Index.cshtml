@@ -1,0 +1,359 @@
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="hero-section position-relative" style="min-height: 100vh; overflow: hidden;">
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <!-- Left Quadrants (1st and 3rd) -->
+            <div class="col-md-6">
+                <!-- 1st Quadrant: Main Hero Content -->
+                <div class="d-flex flex-column justify-content-center align-items-start px-4 px-md-5" style="min-height: 50vh; padding-top: 3rem;">
+        <!-- Modern accent line -->
+                    <div class="mb-4 position-relative">
+                        <div style="width: 80px; height: 4px; background: linear-gradient(90deg, #7c3aed, #ec4899); border-radius: 2px;"></div>
+        </div>
+        
+        <!-- Main heading with gradient text -->
+                    <h1 class="fw-bold mb-4 gradient-text" style="font-size: 3.5rem; max-width: 600px; letter-spacing: -0.5px; line-height: 1.1;">Trade Stocks<br>Effortlessly With Us</h1>
+        
+        <!-- Subtitle with improved styling -->
+                    <p class="lead mb-4" style="font-size: 1.2rem; max-width: 500px; color: rgba(255,255,255,0.8); font-weight: 300;">Unlock the potential of digital assets with our user-friendly platform. Start trading now.</p>
+        
+        <!-- Modern CTA button -->
+                    <div class="mb-4">
+                        <a href="/Home/Stocks" class="btn-gradient px-5 py-3">Get Started</a>
+                    </div>
+                    
+                  
+                    
+                </div>
+                
+                <!-- 3rd Quadrant: Additional content can go here if needed -->
+                <div style="min-height: 25vh;"></div>
+            </div>
+            
+            <!-- Right Quadrants (2nd and 4th) -->
+            <div class="col-md-6">
+                <!-- 2nd Quadrant: Diversify with TradeS Funds -->
+                <div class="px-4 px-md-5 pt-5" style="min-height: 25vh;">
+                    <div class="fund-tile p-4" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(236, 72, 153, 0.1)); border: 1px solid rgba(124, 58, 237, 0.2); border-radius: 12px; margin-bottom: 30px;">
+                        <h3 class="text-white mb-3">Diversify with TradeS Funds</h3>
+                        <p class="text-white-50 mb-4">Invest in curated funds managed by expert traders. Minimize risk while maximizing your portfolio's growth potential.</p>
+                        <a href="/Home/Stocks" class="btn" style="background: linear-gradient(90deg, #7c3aed, #ec4899); color: white; border: none; padding: 10px 20px; font-weight: 500; border-radius: 6px;">Explore Funds</a>
+                    </div>
+                    
+                    <!-- Market Movers Section -->
+                    <div class="market-movers-tile">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <h4 class="text-white mb-0">Market Movers</h4>
+                            <div>
+                                <a href="/Home/Stocks" class="text-white-50 small">See More...</a>
+                            </div>
+                        </div>
+                        
+                        <!-- Top Gainers -->
+                        @if (ViewBag.Gainers != null && ViewBag.Gainers.Count > 0)
+                        {
+                            foreach (var gainer in ViewBag.Gainers)
+                            {
+                                <div class="stock-card mb-3 stock-card-clickable" data-symbol="@gainer.Symbol" style="background: rgba(42, 45, 58, 0.7); border-radius: 10px; padding: 15px; border-left: 4px solid rgba(74, 222, 128, 0.8); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); cursor: pointer;">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div class="d-flex align-items-center">
+                                            <div style="width: 36px; height: 36px; background-color: rgba(74, 222, 128, 0.8); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                                                <span class="text-dark fw-bold">@(gainer.Symbol.Substring(0, 1))</span>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 text-white">@gainer.Symbol</h6>
+                                                <small class="text-muted">@gainer.Name</small>
+                                            </div>
+                                        </div>
+                                        <div class="text-end">
+                                            @{
+                                                // Extract numeric price value
+                                                var priceText = gainer.Price;
+                                                decimal price;
+                                                var priceValue = decimal.TryParse(priceText.Replace("$", ""), out price) ? price : 0m;
+                                            }
+                                            <div class="text-white fw-bold price" data-price-usd="@priceValue.ToString("F2")">@gainer.Price</div>
+                                            <div class="text-success small"><i class="bi bi-arrow-up-right"></i> @gainer.Change</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <!-- Fallback stock cards if no data -->
+                            <div class="stock-card mb-3 stock-card-clickable" data-symbol="AAPL" style="background: rgba(42, 45, 58, 0.7); border-radius: 10px; padding: 15px; border-left: 4px solid rgba(74, 222, 128, 0.8); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); cursor: pointer;">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 36px; height: 36px; background-color: rgba(74, 222, 128, 0.8); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                                            <span class="text-dark fw-bold">A</span>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 text-white">AAPL</h6>
+                                            <small class="text-muted">Apple Inc.</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="text-white fw-bold price" data-price-usd="170.56">$170.56</div>
+                                        <div class="text-success small"><i class="bi bi-arrow-up-right"></i> +2.34%</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="stock-card mb-3" style="background: rgba(42, 45, 58, 0.7); border-radius: 10px; padding: 15px; border-left: 4px solid rgba(74, 222, 128, 0.8); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 36px; height: 36px; background-color: rgba(74, 222, 128, 0.8); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                                            <span class="text-dark fw-bold">M</span>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 text-white">MSFT</h6>
+                                            <small class="text-muted">Microsoft Corp.</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="text-white fw-bold price" data-price-usd="325.83">$325.83</div>
+                                        <div class="text-success small"><i class="bi bi-arrow-up-right"></i> +1.89%</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="stock-card mb-3" style="background: rgba(42, 45, 58, 0.7); border-radius: 10px; padding: 15px; border-left: 4px solid rgba(74, 222, 128, 0.8); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center">
+                                        <div style="width: 36px; height: 36px; background-color: rgba(74, 222, 128, 0.8); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-right: 12px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+                                            <span class="text-dark fw-bold">N</span>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 text-white">NVDA</h6>
+                                            <small class="text-muted">NVIDIA Corp.</small>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="text-white fw-bold price" data-price-usd="245.72">$245.72</div>
+                                        <div class="text-success small"><i class="bi bi-arrow-up-right"></i> +3.15%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                
+                <!-- 4th Quadrant: Additional content can go here if needed -->
+                <div style="min-height: 10vh; display: block; width: 100%; clear: both;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Features Section -->
+    <div class="features-section py-5" style="background: linear-gradient(to bottom, #1a1a24, #1c2331); border-top: 1px solid rgba(124, 58, 237, 0.2); padding-bottom: 80px;">
+        <div class="container py-5">
+            <div class="text-center mb-5">
+                <h2 class="gradient-text fw-bold" style="font-size: 2.5rem; margin-bottom: 25px;">Why Choose TradeS?</h2>
+                <p class="text-white-50 mx-auto" style="max-width: 700px; font-size: 1.1rem; margin-bottom: 40px;">Our platform offers a seamless trading experience with real-time market data and intuitive tools.</p>
+            </div>
+            
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-5 mb-lg-0 px-4">
+                    <div class="feature-card mb-5" style="background: rgba(42, 45, 58, 0.7); border-radius: 16px; padding: 35px; border-left: 4px solid #7c3aed;">
+                        <div class="d-flex align-items-start">
+                            <div style="width: 60px; height: 60px; border-radius: 12px; background: linear-gradient(135deg, #7c3aed, #ec4899); display: flex; align-items: center; justify-content: center; margin-right: 25px; flex-shrink: 0;">
+                                <i class="bi bi-lightning-charge text-white" style="font-size: 1.8rem;"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-white fw-bold mb-3">Fast Execution</h4>
+                                <p class="text-white-50 mb-0" style="font-size: 1.05rem; line-height: 1.6;">Trade faster and easier.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="feature-card" style="background: rgba(42, 45, 58, 0.7); border-radius: 16px; padding: 35px; border-left: 4px solid #ec4899;">
+                        <div class="d-flex align-items-start">
+                            <div style="width: 60px; height: 60px; border-radius: 12px; background: linear-gradient(135deg, #ec4899, #7c3aed); display: flex; align-items: center; justify-content: center; margin-right: 25px; flex-shrink: 0;">
+                                <i class="bi bi-shield-check text-white" style="font-size: 1.8rem;"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-white fw-bold mb-3">Secure Platform</h4>
+                                <p class="text-white-50 mb-0" style="font-size: 1.05rem; line-height: 1.6;">Your investments are protected with enterprise-grade security.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6 px-4">
+                    <div style="background: rgba(42, 45, 58, 0.7); border-radius: 16px; padding: 40px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2); border: 1px solid rgba(124, 58, 237, 0.2);">
+                        <div class="text-center mb-5">
+                            <div style="width: 90px; height: 90px; border-radius: 20px; background: linear-gradient(135deg, #7c3aed, #ec4899); display: flex; align-items: center; justify-content: center; margin: 0 auto 30px; box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.3);">
+                                <i class="bi bi-bar-chart-line-fill text-white" style="font-size: 2.5rem;"></i>
+                            </div>
+                            <h3 class="text-white fw-bold mb-4">Start Trading Today</h3>
+                            <p class="text-white-50 mb-5" style="font-size: 1.1rem;">Become one of the traders who have already discovered the TradeS advantage.</p>
+                        </div>
+                        
+                        <a href="/Home/Stocks" class="btn w-100 py-3" style="background: linear-gradient(90deg, #7c3aed, #ec4899); color: white; border: none; font-weight: 600; border-radius: 8px; font-size: 1.2rem; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);">Explore Markets</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Market Movers Live Updates
+        function updateMarketMovers() {
+            fetch('/Home/GetMarketMovers')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Get all market mover cards
+                        const stockCards = document.querySelectorAll('.market-movers-tile .stock-card');
+                        
+                        if (stockCards.length >= 3 && data.gainers && data.gainers.length >= 3) {
+                            // Update top 3 gainers
+                            for (let i = 0; i < Math.min(stockCards.length, data.gainers.length); i++) {
+                                const gainer = data.gainers[i];
+                                updateCardWithData(stockCards[i], gainer, true);
+                            }
+                        }
+                    }
+                })
+                .catch(error => console.error('Error updating market movers:', error));
+        }
+        
+        // Helper function to update a card with stock data
+        function updateCardWithData(card, stockData, isPositive) {
+            if (!card || !stockData) return;
+            
+            // Update the card with the stock data
+            const initial = stockData.Symbol.substring(0, 1);
+            card.querySelector('.d-flex:first-child div:first-child span').textContent = initial;
+            card.querySelector('h6').textContent = stockData.Symbol;
+            card.querySelector('small').textContent = stockData.Name;
+            
+            // Get price element and update with proper currency
+            const priceElement = card.querySelector('.text-white.fw-bold');
+            if (priceElement) {
+                // Extract numeric price from the stockData.Price (remove $ if present)
+                const numericPrice = parseFloat(stockData.Price.replace(/[$₱]/g, ''));
+                if (!isNaN(numericPrice)) {
+                    // Store original USD price in data attribute
+                    priceElement.setAttribute('data-price-usd', numericPrice.toFixed(2));
+                    
+                    // Get current currency and format price accordingly
+                    const currentCurrency = localStorage.getItem('preferredCurrency') || 'USD';
+                    if (currentCurrency === 'PHP') {
+                        priceElement.textContent = '₱' + (numericPrice * 56.5).toFixed(2);
+                    } else {
+                        priceElement.textContent = '$' + numericPrice.toFixed(2);
+                    }
+                    
+                    // Add price class for future currency updates
+                    priceElement.classList.add('price');
+                }
+            }
+            
+            // Set the appropriate class for change
+            const changeElement = card.querySelector('.text-success.small, .text-danger.small');
+            if (changeElement) {
+                // Set the appropriate icon and text
+                const icon = isPositive ? '<i class="bi bi-arrow-up-right"></i> ' : '<i class="bi bi-arrow-down-right"></i> ';
+                changeElement.innerHTML = icon + stockData.Change;
+            }
+            
+            // Set appropriate card colors based on positive/negative change
+            if (isPositive) {
+                // For gainers (positive change)
+                card.style.borderLeft = '4px solid rgba(74, 222, 128, 0.8)';
+                const iconDiv = card.querySelector('.d-flex:first-child div:first-child');
+                if (iconDiv) {
+                    iconDiv.style.backgroundColor = 'rgba(74, 222, 128, 0.8)';
+                }
+            } else {
+                // For losers (negative change)
+                card.style.borderLeft = '4px solid rgba(239, 68, 68, 0.8)';
+                const iconDiv = card.querySelector('.d-flex:first-child div:first-child');
+                if (iconDiv) {
+                    iconDiv.style.backgroundColor = 'rgba(239, 68, 68, 0.8)';
+                }
+            }
+        }
+
+        // Update prices every 5 seconds
+        function updatePrices() {
+            fetch('/Home/UpdatePrices')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // After updating prices, refresh the market movers
+                        updateMarketMovers();
+                    }
+                })
+                .catch(error => console.error('Error updating prices:', error));
+        }
+
+        // Set up intervals for updates
+        setInterval(updateMarketMovers, 5000); // Update market movers every 5 seconds
+        setInterval(updatePrices, 60000); // Update prices every minute
+
+        // Initial updates
+        document.addEventListener("DOMContentLoaded", function() {
+            // Update market movers and apply current currency
+            updateMarketMovers();
+            
+            // Add click event listeners to stock cards
+            setupStockCardClickHandlers();
+            
+            // Apply the current currency to price elements
+            const savedCurrency = localStorage.getItem('preferredCurrency') || 'USD';
+            const priceElements = document.querySelectorAll('.price');
+            
+            priceElements.forEach(el => {
+                const usdPrice = parseFloat(el.getAttribute('data-price-usd'));
+                if (!isNaN(usdPrice)) {
+                    if (savedCurrency === 'PHP') {
+                        el.textContent = '₱' + (usdPrice * 56.5).toFixed(2);
+                    } else {
+                        el.textContent = '$' + usdPrice.toFixed(2);
+                    }
+                }
+            });
+            
+            // Listen for currency changes
+            document.addEventListener('currencyChanged', function(e) {
+                const currency = e.detail.currency;
+                const priceElements = document.querySelectorAll('.price');
+                
+                priceElements.forEach(el => {
+                    const usdPrice = parseFloat(el.getAttribute('data-price-usd'));
+                    if (!isNaN(usdPrice)) {
+                        if (currency === 'PHP') {
+                            el.textContent = '₱' + (usdPrice * 56.5).toFixed(2);
+                        } else {
+                            el.textContent = '$' + usdPrice.toFixed(2);
+                        }
+                    }
+                });
+            });
+            
+            setTimeout(updatePrices, 2000); // Delay initial price update slightly
+        });
+        
+        // Function to set up click handlers for stock cards
+        function setupStockCardClickHandlers() {
+            // Use event delegation to handle clicks on all stock cards (including dynamically added ones)
+            document.addEventListener('click', function(event) {
+                // Find the closest stock-card-clickable parent
+                const stockCard = event.target.closest('.stock-card-clickable');
+                if (stockCard) {
+                    const symbol = stockCard.getAttribute('data-symbol');
+                    if (symbol) {
+                        // Navigate to the stock details page
+                        window.location.href = '/Home/Stocks?symbol=' + encodeURIComponent(symbol);
+                    }
+                }
+            });
+        }
+    </script>
+}

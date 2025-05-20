@@ -1,0 +1,340 @@
+@{
+    ViewData["Title"] = "Payout";
+}
+
+@section Styles {
+    <style>
+        /* Stripe Elements styling */
+        .StripeElement {
+            background: rgba(30, 30, 40, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 12px;
+            color: white;
+        }
+        .StripeElement--focus {
+            border-color: rgba(124, 58, 237, 0.5);
+            box-shadow: 0 0 0 0.25rem rgba(124, 58, 237, 0.25);
+        }
+        .StripeElement--invalid {
+            border-color: rgba(236, 72, 153, 0.8);
+        }
+    </style>
+}
+
+@Html.AntiForgeryToken()
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="modern-card shadow-lg border-0" style="backdrop-filter: blur(15px); overflow: hidden; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);">
+                <div class="card-header" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.5), rgba(236, 72, 153, 0.5)); border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding: 1.5rem;">
+                    <h4 class="text-white mb-0 fw-bold">Payout from Your Account</h4>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-4">
+                        <label for="amount" class="form-label text-white fw-medium mb-2">Amount to Withdraw <span id="currencySymbolLabel">($)</span></label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white;"><i id="currencyIcon" class="bi bi-currency-dollar"></i></span>
+                            <input type="number" class="form-control" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white; font-size: 1.2rem;" id="amount" min="10" step="10" value="50">
+                        </div>
+                        <small class="text-white-50 mt-2 d-block">Minimum withdrawal: <span id="minWithdrawalCurrency">$</span>10</small>
+                        <small class="text-white-50 mt-1 d-block">Available balance: <span id="balanceCurrencySymbol">$</span><span id="availableBalance">@ViewBag.AvailableBalance</span></small>
+                        <small class="text-white-50 mt-1 d-block" id="convertedAmountInfo" style="display: none;">Equivalent to <span id="convertedAmount"></span> in USD</small>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="text-white mb-3 fw-medium">Quick Amounts</h5>
+                        <div class="d-flex flex-wrap gap-3" id="quickAmountContainer">
+                            <button class="btn quick-amount" style="background: rgba(30, 30, 40, 0.6); color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0.6rem 1.2rem; transition: all 0.3s ease;" data-amount="50"><span class="currency-symbol">$</span>50</button>
+                            <button class="btn quick-amount" style="background: rgba(30, 30, 40, 0.6); color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0.6rem 1.2rem; transition: all 0.3s ease;" data-amount="100"><span class="currency-symbol">$</span>100</button>
+                            <button class="btn quick-amount" style="background: rgba(30, 30, 40, 0.6); color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0.6rem 1.2rem; transition: all 0.3s ease;" data-amount="250"><span class="currency-symbol">$</span>250</button>
+                            <button class="btn quick-amount active" style="background: rgba(30, 30, 40, 0.6); color: white; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 0.6rem 1.2rem; transition: all 0.3s ease;" data-amount="all">All</button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5 class="text-white mb-3 fw-medium">Withdrawal Method</h5>
+                        <div class="card" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px;">
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label text-white-50">Card Information</label>
+                                    <div id="card-element" class="mb-2"></div>
+                                    <div id="card-errors" class="text-danger small"></div>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-white-50">Cardholder Name</label>
+                                        <input type="text" id="cardholder-name" class="form-control" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white;" placeholder="Name on card">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-white-50">Billing Zip/Postal Code</label>
+                                        <input type="text" id="billing-zip" class="form-control" style="background: rgba(30, 30, 40, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); color: white;" placeholder="Zip/Postal code">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4" style="background: rgba(30, 30, 40, 0.6); border-radius: 12px; border-left: 4px solid rgba(236, 72, 153, 0.8); padding: 1.2rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+                        <div class="d-flex">
+                            <div class="me-3">
+                                <i class="bi bi-info-circle-fill fs-3" style="color: rgba(236, 72, 153, 0.8);"></i>
+                            </div>
+                            <div>
+                                <h5 class="text-white fw-medium">Withdrawal Information</h5>
+                                <p class="mb-0 text-white-50">Funds will be processed and sent to your card. Processing may take 1-3 business days. A small transaction fee may apply.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="button" id="cashout-button" class="btn btn-lg text-center" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8)); border: none; color: white; border-radius: 12px; padding: 0.8rem; font-weight: 500; box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3); transition: all 0.3s ease;">
+                            <i class="bi bi-cash-coin me-2"></i> Process Payout
+                        </button>
+                        <a href="@Url.Action("Profile", "Account")" class="btn btn-outline" style="border: 1px solid rgba(255, 255, 255, 0.2);">
+                            <i class="bi bi-arrow-left me-2"></i> Back to Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize Stripe
+            const stripe = Stripe('@ViewData["StripePublicKey"]');
+            const elements = stripe.elements();
+            
+            // Currency conversion constants
+            const USD_TO_PHP_RATE = 56.5;
+            let currentCurrency = localStorage.getItem('preferredCurrency') || 'USD';
+            let originalBalance = parseFloat('@ViewBag.AvailableBalance');
+            let displayBalance = originalBalance;
+            
+            // Initialize currency display
+            updateCurrencyDisplay();
+            
+            // Listen for currency changes from the layout
+            document.addEventListener('currencyChanged', function(event) {
+                currentCurrency = event.detail.currency;
+                updateCurrencyDisplay();
+                updateAmountDisplay();
+            });
+            
+            // Function to update currency display elements
+            function updateCurrencyDisplay() {
+                const currencySymbol = currentCurrency === 'USD' ? '$' : '₱';
+                const currencyIcon = currentCurrency === 'USD' ? 'bi-currency-dollar' : 'bi-currency-exchange';
+                
+                // Update currency symbol in the label
+                document.getElementById('currencySymbolLabel').textContent = `(${currencySymbol})`;
+                
+                // Update currency icon
+                const iconElement = document.getElementById('currencyIcon');
+                iconElement.className = `bi ${currencyIcon}`;
+                
+                // Update minimum withdrawal currency
+                document.getElementById('minWithdrawalCurrency').textContent = currencySymbol;
+                
+                // Update balance currency symbol
+                document.getElementById('balanceCurrencySymbol').textContent = currencySymbol;
+                
+                // Update available balance based on currency
+                if (currentCurrency === 'PHP') {
+                    displayBalance = originalBalance * USD_TO_PHP_RATE;
+                } else {
+                    displayBalance = originalBalance;
+                }
+                document.getElementById('availableBalance').textContent = displayBalance.toFixed(2);
+                
+                // Update quick amount buttons
+                const currencySymbols = document.querySelectorAll('.currency-symbol');
+                currencySymbols.forEach(span => {
+                    span.textContent = currencySymbol;
+                });
+                
+                // Show/hide converted amount info
+                const convertedAmountInfo = document.getElementById('convertedAmountInfo');
+                if (currentCurrency === 'PHP') {
+                    convertedAmountInfo.style.display = 'block';
+                } else {
+                    convertedAmountInfo.style.display = 'none';
+                }
+            }
+            
+            // Function to update amount display based on currency
+            function updateAmountDisplay() {
+                const amountInput = document.getElementById('amount');
+                const amount = parseFloat(amountInput.value);
+                
+                if (!isNaN(amount)) {
+                    // Update converted amount info if in PHP
+                    if (currentCurrency === 'PHP') {
+                        const usdAmount = (amount / USD_TO_PHP_RATE).toFixed(2);
+                        document.getElementById('convertedAmount').textContent = `$${usdAmount}`;
+                    }
+                }
+            }
+            
+            // Create card element
+            const cardElement = elements.create('card', {
+                style: {
+                    base: {
+                        color: 'white',
+                        fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+                        fontSmoothing: 'antialiased',
+                        fontSize: '16px',
+                        '::placeholder': {
+                            color: 'rgba(255, 255, 255, 0.5)'
+                        }
+                    },
+                    invalid: {
+                        color: '#ec4899',
+                        iconColor: '#ec4899'
+                    }
+                }
+            });
+            
+            // Mount the card element
+            cardElement.mount('#card-element');
+            
+            // Handle card validation errors
+            cardElement.on('change', function(event) {
+                const displayError = document.getElementById('card-errors');
+                if (event.error) {
+                    displayError.textContent = event.error.message;
+                } else {
+                    displayError.textContent = '';
+                }
+            });
+            
+            const cashoutButton = document.getElementById('cashout-button');
+            
+            // Handle quick amount buttons
+            const quickAmountButtons = document.querySelectorAll('.quick-amount');
+            quickAmountButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const amountValue = this.getAttribute('data-amount');
+                    if (amountValue === 'all') {
+                        document.getElementById('amount').value = displayBalance.toFixed(2);
+                    } else {
+                        document.getElementById('amount').value = amountValue;
+                    }
+                    updateAmountDisplay();
+                    
+                    // Update active state
+                    quickAmountButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Listen for amount changes
+            document.getElementById('amount').addEventListener('input', updateAmountDisplay);
+            
+            // Handle cashout button click
+            cashoutButton.addEventListener('click', async function(e) {
+                e.preventDefault();
+                
+                const amount = parseFloat(document.getElementById('amount').value);
+                const cardholderName = document.getElementById('cardholder-name').value;
+                const billingZip = document.getElementById('billing-zip').value;
+                
+                if (isNaN(amount) || amount < 10) {
+                    alert(`Please enter a valid amount (minimum ${currentCurrency === 'USD' ? '$' : '₱'}10)`);
+                    return;
+                }
+                
+                // Convert the display balance to the current currency for comparison
+                if (amount > displayBalance) {
+                    alert(`You cannot withdraw more than your available balance of ${currentCurrency === 'USD' ? '$' : '₱'}${displayBalance.toFixed(2)}`);
+                    return;
+                }
+                
+                // Convert amount to USD if in PHP
+                let usdAmount = amount;
+                if (currentCurrency === 'PHP') {
+                    usdAmount = amount / USD_TO_PHP_RATE;
+                }
+                
+                if (!cardholderName) {
+                    alert('Please enter the cardholder name');
+                    return;
+                }
+                
+                // Disable button and show loading state
+                cashoutButton.disabled = true;
+                cashoutButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Processing...';
+                
+                try {
+                    // Create a payment method
+                    const result = await stripe.createPaymentMethod({
+                        type: 'card',
+                        card: cardElement,
+                        billing_details: {
+                            name: cardholderName,
+                            address: {
+                                postal_code: billingZip
+                            }
+                        }
+                    });
+                    
+                    if (result.error) {
+                        throw new Error(result.error.message);
+                    }
+                    
+                    // Send payment method ID to server
+                    const response = await fetch('/Payment/ProcessCashOut', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            amount: currentCurrency === 'PHP' ? amount : usdAmount,
+                            paymentMethodId: result.paymentMethod.id,
+                            currency: currentCurrency
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Network response was not ok');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (!data.success) {
+                        throw new Error(data.message || 'Invalid response from server');
+                    }
+                    
+                    // Show success message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-success mt-3';
+                    alertDiv.innerHTML = `<i class="bi bi-check-circle me-2"></i> ${data.message}`;
+                    document.querySelector('.card-body').prepend(alertDiv);
+                    
+                    // Redirect after a short delay
+                    setTimeout(function() {
+                        window.location.href = data.redirectUrl || '/Account/Profile';
+                    }, 1500);
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    
+                    // Show error message
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger mt-3';
+                    alertDiv.innerHTML = `<i class="bi bi-exclamation-circle me-2"></i> ${error.message || 'An error occurred. Please try again.'}`;
+                    document.querySelector('.card-body').prepend(alertDiv);
+                } finally {
+                    // Re-enable button
+                    cashoutButton.disabled = false;
+                    cashoutButton.innerHTML = '<i class="bi bi-cash-coin me-2"></i> Process Payout';
+                }
+            });
+        });
+    </script>
+}

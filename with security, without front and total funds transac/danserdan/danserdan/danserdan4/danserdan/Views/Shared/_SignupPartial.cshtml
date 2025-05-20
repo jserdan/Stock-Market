@@ -1,0 +1,251 @@
+<!-- Signup Modal -->
+<div class="modal fade" id="signupModal" tabindex="-1" aria-labelledby="signupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content bg-transparent border-0">
+            <div class="modal-body p-0">
+
+                <!-- Company Logo -->
+                <div class="text-center mb-3">
+                    <span class="text-white fs-4 fw-bold">TradeS Inc.</span>
+                </div>
+
+                <!-- Signup Form Container -->
+                <div class="text-white p-4 rounded-3"
+                     style="background: rgba(42, 45, 58, 0.7); backdrop-filter: blur(15px);
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);">
+
+                    <!-- Signup Header -->
+                    <h3 class="text-center mb-2 fw-bold">Create account</h3>
+                    <p class="text-center text-muted small mb-4">Join TradeS today</p>
+
+                    <!-- Error Message -->
+                    <div id="signupErrorMessage" class="alert alert-danger d-none"></div>
+
+                    <!-- Password mismatch message -->
+                    <div id="passwordMismatchMessage" class="alert alert-warning d-none">
+                        Passwords do not match.
+                    </div>
+
+                    <!-- Signup Form -->
+                    <form id="signupForm" method="post" novalidate>
+                        <input type="hidden" name="isModal" value="true" />
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="firstName" class="form-label small fw-medium mb-2">First Name</label>
+                                <input type="text" class="form-control rounded-2 bg-dark text-white border-light" id="firstName" name="firstName" required maxlength="50" />
+                            </div>
+                            <div class="col-md-6">
+                                <label for="lastName" class="form-label small fw-medium mb-2">Last Name</label>
+                                <input type="text" class="form-control rounded-2 bg-dark text-white border-light" id="lastName" name="lastName" required maxlength="50" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label small fw-medium mb-2">Username</label>
+                            <input type="text" class="form-control rounded-2 bg-dark text-white border-light" id="username" name="username" required minlength="3" maxlength="50" />
+                            <small class="form-text text-white-50 mt-1">Username must be between 3 and 50 characters.</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label small fw-medium mb-2">Email</label>
+                            <input type="email" class="form-control rounded-2 bg-dark text-white border-light" id="email" name="email" required />
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label small fw-medium mb-2">Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control rounded-start-2 bg-dark text-white border-light" id="password" name="password" required minlength="8" placeholder="••••••••" />
+                                <button type="button" class="btn btn-outline-secondary text-white bg-dark border-light" onclick="togglePasswordVisibility('password', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <small class="form-text text-white-50 mt-1">
+                                Password must be at least 8 characters, include uppercase, lowercase, number, and special character.
+                            </small>
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label small fw-medium mb-2">Confirm Password</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control rounded-start-2 bg-dark text-white border-light" id="confirmPassword" name="confirmPassword" required placeholder="••••••••" />
+                                <button type="button" class="btn btn-outline-secondary text-white bg-dark border-light" onclick="togglePasswordVisibility('confirmPassword', this)">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <small class="form-text text-white-50 mt-1">Re-enter your password to confirm.</small>
+                        </div>
+
+                        <!-- CAPTCHA -->
+                        <div class="mb-3"> 
+                            <label for="captchaInput" class="form-label small fw-medium mb-2">Enter the text you see</label>
+                            <div class="d-flex align-items-center gap-2">
+                                <input type="text" class="form-control rounded-2 bg-dark text-white border-light" id="captchaInput" name="captcha" required style="max-width: 130px;" /> 
+                                <img src="@Url.Action("GenerateCaptcha", "Account")" alt="CAPTCHA" id="captchaImage" class="rounded-2" style="cursor: pointer; height: 32px;" onclick="reloadCaptcha()" title="Click to reload CAPTCHA" /> 
+                            </div>
+                            <small class="form-text text-white-50 mt-1">Please enter the characters shown in the image.</small>
+                        </div>
+                        
+                        <!-- Terms and Conditions -->
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="termsCheckbox" />
+                            <label class="form-check-label text-white-75" for="termsCheckbox">
+                                I agree to the <a href="#" class="text-muted" data-bs-toggle="modal" data-bs-target="#privacyModal">Terms of Service & Privacy Policy</a>
+                            </label>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid mb-4 mt-4">
+                            <button type="submit" id="submitBtn" class="btn btn-gradient-purple fw-medium rounded-2" disabled>Create Account</button>
+                        </div>
+                    </form>
+
+                    <!-- Login Link -->
+                    <div class="text-center">
+                        <p class="mb-0 small">
+                            Already have an account?
+                            <a href="#" class="modal-switch" data-target="loginModal" style="color: rgba(124, 58, 237, 0.9); text-decoration: none; font-weight: 500;">Login</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-2" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<!-- Privacy Policy Modal -->
+<div class="modal fade" id="privacyModal" tabindex="-1" aria-labelledby="privacyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="privacyModalLabel">Terms and conditions & Privacy Policy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-black">
+                <p>
+                    By using TradeS Inc., you agree to the following terms and privacy practices. You acknowledge that you understand and accept the responsibilities, rights, and limitations described herein.
+                </p>
+                <p>
+                    You agree to use the platform lawfully and ethically, and understand that TradeS Inc. may update these terms at any time with prior notice. Misuse of the service may result in account suspension or termination.
+                </p>
+                <p>
+                    We are committed to protecting your privacy. We collect and process your data only as necessary to provide our services, improve user experience, and meet legal obligations. Your data will not be sold or shared with third parties without your consent, except where required by law.
+                </p>
+                <p>
+                    By clicking "I Agree", you confirm that you have read and understood the Terms of Service and Privacy Policy and consent to the collection and use of your data as outlined.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="disagreeBtn" data-bs-dismiss="modal">I Disagree</button>
+                <button type="button" class="btn btn-primary" id="agreeBtn" data-bs-dismiss="modal">I Agree</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function reloadCaptcha() {
+        const captchaImage = document.getElementById('captchaImage');
+        captchaImage.src = '@Url.Action("GenerateCaptcha", "Account")?' + Date.now();
+    }
+
+    // Enable submit only if terms accepted
+    const termsCheckbox = document.getElementById('termsCheckbox');
+    const submitBtn = document.getElementById('submitBtn');
+
+    termsCheckbox.addEventListener('change', () => {
+        submitBtn.disabled = !termsCheckbox.checked;
+    });
+
+    // Privacy modal buttons to toggle checkbox & submit button
+    document.getElementById('agreeBtn').addEventListener('click', () => {
+        termsCheckbox.checked = true;
+        submitBtn.disabled = false;
+    });
+
+    document.getElementById('disagreeBtn').addEventListener('click', () => {
+        termsCheckbox.checked = false;
+        submitBtn.disabled = true;
+    });
+
+    function togglePasswordVisibility(inputId, btn) {
+        const input = document.getElementById(inputId);
+        const icon = btn.querySelector('i');
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.remove("fa-eye");
+            icon.classList.add("fa-eye-slash");
+        } else {
+            input.type = "password";
+            icon.classList.remove("fa-eye-slash");
+            icon.classList.add("fa-eye");
+        }
+    }
+
+    // AJAX form submission with password match check
+    $(function () {
+        $('#signupForm').on('submit', function (e) {
+            e.preventDefault();
+
+            $('#signupErrorMessage').addClass('d-none').text('');
+            $('#passwordMismatchMessage').addClass('d-none');
+
+            const password = $('#password').val();
+            const confirmPassword = $('#confirmPassword').val();
+
+            if (password !== confirmPassword) {
+                $('#passwordMismatchMessage').removeClass('d-none');
+                return;
+            }
+
+            const formData = $(this).serialize();
+
+            $.ajax({
+                url: '@Url.Action("Signup", "Account")',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+                success: function (response) {
+                    if (response.success) {
+                        $('#signupModal').modal('hide');
+                        window.location.href = '@Url.Action("Index", "Home")';
+                    } else {
+                        $('#signupErrorMessage').text(response.message || 'An error occurred. Please try again.').removeClass('d-none');
+                        reloadCaptcha();
+                    }
+                },
+                error: function () {
+                    $('#signupErrorMessage').text('An error occurred. Please try again.').removeClass('d-none');
+                    reloadCaptcha();
+                }
+            });
+        });
+    });
+</script>
+
+<style>
+    .bg-dark {
+        background: rgba(30, 30, 40, 0.6) !important;
+    }
+
+    .border-light {
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .btn-gradient-purple {
+        background: linear-gradient(135deg, rgba(124, 58, 237, 0.8), rgba(236, 72, 153, 0.8));
+        border: none;
+        color: white;
+        box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+        transition: all 0.3s ease;
+    }
+
+    .btn-gradient-purple:disabled {
+        opacity: 0.5;
+        box-shadow: none;
+    }
+</style>

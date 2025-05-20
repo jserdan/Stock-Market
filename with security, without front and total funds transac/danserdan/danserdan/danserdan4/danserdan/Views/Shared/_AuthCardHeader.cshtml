@@ -1,0 +1,50 @@
+﻿@model string
+@{
+    ViewData["Title"] = Model == "signup" ? "Sign Up" : "Login";
+}
+
+<div class="container">
+    @if (Model == "signup")
+    {
+        <h2>Sign Up</h2>
+        <form method="post" asp-controller="Home" asp-action="ProcessSignup">
+            <div class="mb-3">
+                <label for="username" class="form-label">Username:</label>
+                <input type="text" class="form-control" name="username" required />
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Email:</label>
+                <input type="email" class="form-control" name="email" required />
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password:</label>
+                <input type="password" class="form-control" name="password" required />
+            </div>
+            <button type="submit" class="btn btn-primary">Sign Up</button>
+            @if (ViewBag.Error != null)
+            {
+                <p class="text-danger">@ViewBag.Error</p>
+            }
+        </form>
+    }
+    else
+    {
+        <h2>Login</h2>
+        <form method="post" asp-controller="Home" asp-action="ProcessLogin">
+            <!-- Login form fields -->
+            <div class="mb-3">
+                <label for="email" class="form-label">Email:</label>
+                <input type="email" class="form-control" name="email" required />
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password:</label>
+                <input type="password" class="form-control" name="password" required />
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+            @if (ViewBag.Error != null)
+            {
+                <p class="text-danger">@ViewBag.Error</p>
+            }
+        </form>
+    }
+</div>

@@ -1,0 +1,135 @@
+@{
+    ViewData["Title"] = "Our Team";
+}
+
+<style>
+    .team-section {
+        font-family: 'Inter', sans-serif;
+        color: white;
+    }
+    .team-section h2 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        background: linear-gradient(90deg, #7c3aed, #ec4899);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .founder-info h3 {
+        color: white;
+        font-weight: 600;
+    }
+    .founder-info p {
+        color: rgba(255, 255, 255, 0.9);
+    }
+    .founder-info .text-secondary {
+        color: rgba(255, 255, 255, 0.7) !important;
+    }
+    .founder-item {
+        background: rgba(26, 26, 36, 0.5);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .founder-image {
+        border: 3px solid rgba(124, 58, 237, 0.5);
+        transition: transform 0.3s ease;
+    }
+    .founder-image:hover {
+        transform: scale(1.05);
+    }
+</style>
+
+<section class="py-5 team-section">
+    <div class="container">
+        <div class="founders-heading text-center">
+            <h2>Our Team</h2>
+        </div>
+
+        <!-- Joshua Serdan -->
+        <div class="founder-item">
+            <div class="row founder-row">
+                <div class="col-md-4 d-flex justify-content-center">
+                    <div class="founder-image-container">
+                        <div class="founder-bg-circle"></div>
+                        <div class="founder-image-wrapper">
+                            <img src="/images/team/serdan.png" alt="Joshua Serdan" class="founder-image">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="founder-info">
+                        <h3 class="mb-3">Joshua Serdan</h3>
+                        <p class="mb-2">Joshua Serdan is the front end designer of this project.</p>
+                        <p class="text-secondary">He brings creativity and technical expertise to create engaging user interfaces.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nicole Quimbo -->
+        <div class="founder-item">
+            <div class="row founder-row">
+                <div class="col-md-4 d-flex justify-content-center">
+                    <div class="founder-image-container">
+                        <div class="founder-bg-circle"></div>
+                        <div class="founder-image-wrapper">
+                            <img src="/images/team/quimbo.png" alt="Nicole Quimbo" class="founder-image">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="founder-info">
+                        <h3 class="mb-3">Nicole Quimbo</h3>
+                        <p class="mb-2">Nicole Quimbo is the QA of this project.</p>
+                        <p class="text-secondary">She ensures the highest quality standards are maintained throughout development.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reigo Emmanuel Pondang -->
+        <div class="founder-item">
+            <div class="row founder-row">
+                <div class="col-md-4 d-flex justify-content-center">
+                    <div class="founder-image-container">
+                        <div class="founder-bg-circle"></div>
+                        <div class="founder-image-wrapper">
+                            <img src="/images/team/reigo.png" alt="Reigo Emmanuel Pondang" class="founder-image">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="founder-info">
+                        <h3 class="mb-3">Reigo Emmanuel Pondang</h3>
+                        <p class="mb-2">Reigo Emmanuel Pondang is the backend of this project.</p>
+                        <p class="text-secondary">He develops robust systems that power the application's core functionality.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Jeremy Juaton -->
+        <div class="founder-item">
+            <div class="row founder-row">
+                <div class="col-md-4 d-flex justify-content-center">
+                    <div class="founder-image-container">
+                        <div class="founder-bg-circle"></div>
+                        <div class="founder-image-wrapper">
+                            <img src="/images/team/rem.png" alt="Jeremy Juaton" class="founder-image">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="founder-info">
+                        <h3 class="mb-3">Jeremy Juaton</h3>
+                        <p class="mb-2">Jeremy Juaton ensures the security of this project.</p>
+                        <p class="text-secondary">He implements comprehensive security measures to protect user data and transactions.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section> 
